@@ -44,21 +44,36 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     let vivo = true;
-    // Estado real de las claves: no manda a configurar algo que ya está configurado.
-    fetch(apiUrl('/api/claves/estado'))
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!vivo || !d?.campos) return;
-        const hay = (campo: string): boolean => {
-          const c = (d.campos as Array<{ campo: string; origen: string }>).find((x) => x.campo === campo);
-          return Boolean(c) && c!.origen !== 'ausente';
-        };
-        setHayIa(hay('gemini_api_key'));
-        setHayVoz(hay('assemblyai_api_key'));
-      })
-      .catch(() => {
-        /* sin backend (demo) o sin permisos: la bienvenida no se cae por esto */
-      });
+    let intentos = 0;
+
+    // El backend de la app tarda un instante en escuchar en su puerto (su propio log dice «puerto ocupado,
+    // reintento») y este modal es lo PRIMERO que corre al abrir: con un único fetch, la bienvenida quedaba sin
+    // el estado real de las claves. Medido el 26/09/2026 contra la app instalada: reabriendo el modal (backend
+    // ya arriba) los badges aparecían; en la primera apertura, no. Se reintenta unos segundos y, si no se
+    // puede saber, no se afirma nada: `null` = sin badge, ni «listo» ni «falta».
+    const leerEstado = () => {
+      fetch(apiUrl('/api/claves/estado'))
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (!vivo) return;
+          if (!d?.campos) {
+            if (intentos++ < 5) window.setTimeout(leerEstado, 700);
+            return;
+          }
+          const hay = (campo: string): boolean => {
+            const c = (d.campos as Array<{ campo: string; origen: string }>).find((x) => x.campo === campo);
+            return Boolean(c) && c!.origen !== 'ausente';
+          };
+          setHayIa(hay('gemini_api_key'));
+          setHayVoz(hay('assemblyai_api_key'));
+        })
+        .catch(() => {
+          // Backend que todavía no abrió (o red caída): se reintenta; la bienvenida no se cae por esto.
+          if (vivo && intentos++ < 5) window.setTimeout(leerEstado, 700);
+        });
+    };
+
+    leerEstado();
     return () => {
       vivo = false;
     };
