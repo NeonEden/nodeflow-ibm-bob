@@ -455,6 +455,18 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
    * eco del micrófono o el reloj de inactividad — y el diagnóstico vuelve a ser una deducción.
    */
   const cerrarSesion = (motivo = 'salida') => {
+    // El timer de quietud se mata acá y no en la vía que cierra: este es el punto por el que pasan
+    // TODAS las salidas (panel cerrado, caída, eco, fin de diálogo, inactividad, fin de conversación).
+    // Si sobrevive al cierre, dispara una consulta con la sesión ya cerrada y el fantasma puede
+    // dibujarse DESPUÉS de que el usuario cerró el panel.
+    if (evalTimerRef.current !== null) {
+      window.clearTimeout(evalTimerRef.current);
+      evalTimerRef.current = null;
+    }
+    // El estado del segmentador no se arrastra a la próxima sesión.
+    anteriorRef.current = '';
+    textoEnVueloRef.current = '';
+    ultimaLlamadaRef.current = 0;
     const rt = rtRef.current;
     rtRef.current = null;
     if (!rt) return;
@@ -581,8 +593,10 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
           ms_desde_cambio: msQuieto(ahora, ultimoCambioRef.current),
           es_final: esFinal,
         }).then((decision) => {
-          // Respuesta stale: si el texto ya cambió, esta decisión habla de una frase vieja.
-          if (!esFinal && textoEnVueloRef.current !== texto) return;
+          // Respuesta stale: si el texto que originó esta consulta ya no es el último, la decisión
+          // habla de una frase vieja y se descarta. Vale también para el cierre de turno: una
+          // respuesta final que llega después de empezado otro turno no debe pisar el borrador nuevo.
+          if (textoEnVueloRef.current !== texto) return;
           onDecisionParcial?.(decision);
         });
       };
