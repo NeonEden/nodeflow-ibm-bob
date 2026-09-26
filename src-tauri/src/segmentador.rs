@@ -73,15 +73,21 @@ const MARCADORES_CORRECCION: &[&str] = &[
 ];
 
 // ── Marcadores de tema (corte de cadena) ────────────────────────────────────────────────────────
-// Se usan para dividir el turno en unidades temáticas según el contrato. La comparación es
-// case‑insensitive y sin acentos (se reutiliza la función `normalizar`).
+// Se usan para dividir el turno en unidades temáticas según el contrato. La comparación es por palabra
+// completa y no distingue mayúsculas (`(?i)`); los acentos se cubren listando las dos grafías (el
+// reconocimiento puede devolver «además» o «ademas»).
+// Conectores que marcan un tema nuevo. Van las dos grafías (con y sin tilde) porque el
+// reconocimiento puede devolver cualquiera de las dos y el match es por palabra completa.
 const MARCADORES_TEMA: &[&str] = &[
     "otra cosa",
     "y también",
+    "y tambien",
     "además",
+    "ademas",
     "por otro lado",
     "ahora",
     "después",
+    "despues",
     "paso dos",
     "segundo",
     "tercero",
@@ -126,7 +132,9 @@ fn titulo_del_borrador(texto: &str) -> String {
     }
     let mut t = palabras.join(" ");
     // Trim punctuation from ends
-    t = t.trim_matches(|c: char| c.is_ascii_punctuation() || c.is_whitespace()).to_string();
+    t = t
+        .trim_matches(|c: char| c.is_ascii_punctuation() || c.is_whitespace())
+        .to_string();
     t
 }
 
@@ -138,9 +146,13 @@ fn particionar_temas(texto: &str) -> Vec<Temas> {
         .build()
         .unwrap();
     // Split, discarding the markers.
-    let raw: Vec<String> = re.split(texto).map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+    let raw: Vec<String> = re
+        .split(texto)
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
     let mut unidades: Vec<String> = Vec::new();
-    for mut u in raw {
+    for u in raw {
         // Ensure minimum unit size.
         let word_cnt = u.split_whitespace().count();
         if word_cnt < MIN_UNIDAD_PALABRAS && !unidades.is_empty() {
@@ -151,11 +163,14 @@ fn particionar_temas(texto: &str) -> Vec<Temas> {
             unidades.push(u);
         }
     }
-    // Apply ceiling of topics.
+    // Techo de temas: lo que sobra se junta en el ÚLTIMO tema, sin perder texto.
+    //
+    // La primera versión usaba `unidades.drain(MAX_TEMAS - 1..)` y después escribía en
+    // `unidades[MAX_TEMAS - 1]`: el drain ya había vaciado esa posición y con cinco temas el índice
+    // quedaba fuera de rango (pánico). Lo cazó el test `techo_de_cuatro_temas`.
     if unidades.len() > MAX_TEMAS {
-        let extra: Vec<String> = unidades.drain(MAX_TEMAS - 1..).collect();
-        let merged = extra.join(" ");
-        unidades[MAX_TEMAS - 1] = format!("{} {}", unidades[MAX_TEMAS - 1], merged);
+        let resto = unidades.split_off(MAX_TEMAS - 1);
+        unidades.push(resto.join(" "));
     }
     // Build Temas structs.
     unidades
@@ -166,7 +181,6 @@ fn particionar_temas(texto: &str) -> Vec<Temas> {
         })
         .collect()
 }
-
 
 /// Parte el texto en tokens (por espacios) y devuelve el primer `n`.
 fn primeros_tokens(texto: &str, n: usize) -> Vec<String> {
@@ -217,6 +231,7 @@ pub fn clasificar(e: &Entrada) -> Decision {
             motivo: "marcador de corrección en los primeros 5 tokens".into(),
             titulo: None,
             texto: texto_limpio,
+            temas: None,
         };
     }
 
@@ -239,6 +254,7 @@ pub fn clasificar(e: &Entrada) -> Decision {
                     motivo: format!("descartado: el parcial cambió hace {ms} ms (< 250 ms)"),
                     titulo: None,
                     texto: texto_limpio,
+                    temas: None,
                 };
             }
         } else if let Some(ant) = e.anterior {
@@ -248,6 +264,7 @@ pub fn clasificar(e: &Entrada) -> Decision {
                     motivo: "descartado: parcial en movimiento y sin dato de tiempo".into(),
                     titulo: None,
                     texto: texto_limpio,
+                    temas: None,
                 };
             }
         }
@@ -259,32 +276,39 @@ pub fn clasificar(e: &Entrada) -> Decision {
     if n_palabras < 3 {
         return Decision {
             clase: ClaseParcial::Nada,
-            motivo: format!(
-                "descartado: menos de 3 palabras ({n_palabras})"
-            ),
+            motivo: format!("descartado: menos de 3 palabras ({n_palabras})"),
             titulo: None,
             texto: texto_limpio,
+            temas: None,
         };
     }
 
     // ── 4. Semilla: parcial estable con ≥ 3 palabras, o turno cerrado con ≥ 3 palabras.
     // Generamos la lista de temas según los marcadores de tema del contrato.
-    let temas_lista = if e.es_final {
-        // al cerrar el turno, el cliente actual espera un solo tema completo
-        vec![Temas { titulo: titulo_del_borrador(&texto_limpio), texto: texto_limpio.clone() }]
-    } else {
-        // partición determinista
-        particionar_temas(&texto_limpio)
-    };
+    //
+    // El cierre del turno TAMBIÉN se parte en temas, y es el caso que más importa: medido en la prueba
+    // real del 26/09, los nodos gigantes salieron justo de los cierres («turno cerrado con 66
+    // palabras» → un nodo con todo el dictado). Dejar el cierre en un solo tema era exactamente el
+    // síntoma que este pedido viene a arreglar.
+    let temas_lista = particionar_temas(&texto_limpio);
     Decision {
         clase: ClaseParcial::Semilla,
         motivo: if e.es_final {
-            format!("turno cerrado con {n_palabras} palabras")
+            format!(
+                "turno cerrado con {n_palabras} palabras, {} tema(s)",
+                temas_lista.len()
+            )
         } else {
             format!("parcial estable con {n_palabras} palabras")
         },
-        titulo: None,
-        texto: texto_limpio,
+        // Compatibilidad con el cliente de hoy (dibuja un solo fantasma): el título y el texto son los
+        // del PRIMER tema, no los del turno completo. El cliente del pedido 05 usa `temas` y dibuja la
+        // cadena entera.
+        titulo: temas_lista.first().map(|t| t.titulo.clone()),
+        texto: temas_lista
+            .first()
+            .map(|t| t.texto.clone())
+            .unwrap_or(texto_limpio),
         temas: Some(temas_lista),
     }
 }
@@ -295,14 +319,29 @@ pub fn clasificar(e: &Entrada) -> Decision {
 mod tests {
     use super::*;
 
-    fn ent<'a>(texto: &'a str, anterior: Option<&'a str>, ms: Option<u64>, final_: bool) -> Entrada<'a> {
-        Entrada { texto, anterior, ms_desde_cambio: ms, es_final: final_ }
+    fn ent<'a>(
+        texto: &'a str,
+        anterior: Option<&'a str>,
+        ms: Option<u64>,
+        final_: bool,
+    ) -> Entrada<'a> {
+        Entrada {
+            texto,
+            anterior,
+            ms_desde_cambio: ms,
+            es_final: final_,
+        }
     }
 
     // Fila de la tabla: parcial inestable → Nada
     #[test]
     fn inestable_es_nada() {
-        let e = ent("quiero un nodo de código", Some("quiero un nodo"), None, false);
+        let e = ent(
+            "quiero un nodo de código",
+            Some("quiero un nodo"),
+            None,
+            false,
+        );
         assert_eq!(clasificar(&e).clase, ClaseParcial::Nada);
     }
 
@@ -363,7 +402,12 @@ mod tests {
     // «nodo de código» no es corrección
     #[test]
     fn nodo_de_codigo_no_es_correccion() {
-        let e = ent("nodo de código para parsear JSON", Some("nodo de código para parsear JSON"), Some(400), false);
+        let e = ent(
+            "nodo de código para parsear JSON",
+            Some("nodo de código para parsear JSON"),
+            Some(400),
+            false,
+        );
         assert_ne!(clasificar(&e).clase, ClaseParcial::Correccion);
         // Estable y ≥ 3 palabras → Semilla
         assert_eq!(clasificar(&e).clase, ClaseParcial::Semilla);
@@ -372,7 +416,12 @@ mod tests {
     // Reciente (ms < 250) → Nada aunque sea estable
     #[test]
     fn reciente_es_nada() {
-        let e = ent("quiero tres nodos aquí", Some("quiero tres nodos aquí"), Some(120), false);
+        let e = ent(
+            "quiero tres nodos aquí",
+            Some("quiero tres nodos aquí"),
+            Some(120),
+            false,
+        );
         assert_eq!(clasificar(&e).clase, ClaseParcial::Nada);
     }
 
@@ -387,7 +436,12 @@ mod tests {
     // El texto de salida se conserva (sólo se recortan espacios de los bordes)
     #[test]
     fn texto_conservado() {
-        let e = ent("  Quiero un nodo  ", Some("  Quiero un nodo  "), Some(300), false);
+        let e = ent(
+            "  Quiero un nodo  ",
+            Some("  Quiero un nodo  "),
+            Some(300),
+            false,
+        );
         let d = clasificar(&e);
         assert_eq!(d.texto, "Quiero un nodo");
     }
@@ -426,5 +480,138 @@ mod tests {
         // movimiento, y el fantasma espera.
         let e = ent("quiero un nodo", Some("quiero un"), None, false);
         assert_eq!(clasificar(&e).clase, ClaseParcial::Nada);
+    }
+
+    // ── Partición en temas (pedido 04) ───────────────────────────────────────────────────────────
+    // El turno se parte en unidades para que el lienzo dibuje una cadena de nodos por tema, en vez de
+    // un nodo con todo el dictado (medido 26/09: «turno cerrado con 66 palabras» → un solo nodo).
+
+    #[test]
+    fn marcador_explicito_parte_en_dos_temas() {
+        let e = ent(
+            "quiero un nodo de audio, otra cosa quiero un nodo de video",
+            None,
+            Some(400),
+            false,
+        );
+        let d = clasificar(&e);
+        assert_eq!(d.clase, ClaseParcial::Semilla);
+        let t = d.temas.expect("una semilla tiene que traer temas");
+        assert_eq!(t.len(), 2, "primer tema: {}", t[0].texto);
+        assert!(t[0].texto.contains("audio"), "t[0] = {}", t[0].texto);
+        assert!(t[1].texto.contains("video"), "t[1] = {}", t[1].texto);
+    }
+
+    #[test]
+    fn sin_marcadores_es_un_solo_tema() {
+        let e = ent(
+            "quiero un nodo de codigo que se conecte al sintetizador",
+            None,
+            Some(400),
+            false,
+        );
+        let t = clasificar(&e).temas.expect("temas");
+        assert_eq!(t.len(), 1, "sin separadores no se inventan temas");
+    }
+
+    #[test]
+    fn unidad_corta_se_pega_a_la_anterior() {
+        // «ahora» deja una cola de una sola palabra: se pega, no queda como tema propio ni se descarta.
+        let e = ent(
+            "quiero un nodo de audio ahora listo",
+            None,
+            Some(400),
+            false,
+        );
+        let t = clasificar(&e).temas.expect("temas");
+        assert_eq!(t.len(), 1, "la cola corta se pega: {}", t[0].texto);
+    }
+
+    #[test]
+    fn techo_de_cuatro_temas() {
+        // Cinco marcadores: el techo manda y lo que sobra se junta en el cuarto.
+        let e = ent(
+            "uno dos tres otra cosa cuatro cinco seis otra cosa siete ocho nueve otra cosa diez once \
+             doce otra cosa trece catorce quince",
+            None,
+            Some(400),
+            false,
+        );
+        let t = clasificar(&e).temas.expect("temas");
+        assert_eq!(
+            t.len(),
+            4,
+            "el techo es 4; el ultimo tema se lleva lo que sobra"
+        );
+    }
+
+    #[test]
+    fn nada_y_correccion_no_traen_temas() {
+        let nada = clasificar(&ent("dos palabras", None, Some(400), false));
+        assert_eq!(nada.clase, ClaseParcial::Nada);
+        assert!(
+            nada.temas.is_none(),
+            "una decision descartada no lleva temas"
+        );
+
+        let correccion = clasificar(&ent(
+            "en realidad quiero tres nodos",
+            None,
+            Some(400),
+            false,
+        ));
+        assert_eq!(correccion.clase, ClaseParcial::Correccion);
+        assert!(correccion.temas.is_none(), "una correccion no lleva temas");
+    }
+
+    #[test]
+    fn marcadores_con_mayusculas_partes_igual() {
+        let e = ent(
+            "Quiero un nodo de audio ADEMAS quiero un nodo de video",
+            None,
+            Some(400),
+            false,
+        );
+        let t = clasificar(&e).temas.expect("temas");
+        assert_eq!(
+            t.len(),
+            2,
+            "el marcador en mayusculas tambien corta: {}",
+            t[0].texto
+        );
+    }
+
+    #[test]
+    fn el_cierre_del_turno_tambien_parte_en_temas() {
+        // ANCLA (26/09/2026): la primera versión dejaba el cierre del turno en UN solo tema «para no
+        // romper al cliente», y los nodos gigantes de la prueba real salieron justo de los cierres
+        // («turno cerrado con 66 palabras»). Si alguien vuelve a poner el cierre en un tema solo, este
+        // test falla.
+        let e = ent(
+            "quiero un nodo de audio, otra cosa quiero un nodo de video",
+            None,
+            None,
+            true,
+        );
+        let d = clasificar(&e);
+        assert_eq!(d.clase, ClaseParcial::Semilla);
+        let t = d.temas.expect("el cierre tambien lleva temas");
+        assert_eq!(t.len(), 2, "motivo: {}", d.motivo);
+    }
+
+    #[test]
+    fn el_titulo_y_el_texto_son_del_primer_tema() {
+        // Compatibilidad: el cliente de hoy dibuja un solo fantasma con `titulo`/`texto`. Con la
+        // partición, esos campos pasan a ser los del PRIMER tema y no los del turno entero.
+        let e = ent(
+            "quiero un nodo de audio, otra cosa quiero un nodo de video",
+            None,
+            Some(400),
+            false,
+        );
+        let d = clasificar(&e);
+        let t = d.temas.expect("temas");
+        assert_eq!(d.texto, t[0].texto, "el texto es el del primer tema");
+        assert_eq!(d.titulo.as_deref(), Some(t[0].titulo.as_str()));
     }
 }

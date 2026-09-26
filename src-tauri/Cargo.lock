@@ -74,6 +74,7 @@ dependencies = [
  "keyring",
  "log",
  "notify",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",

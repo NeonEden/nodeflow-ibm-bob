@@ -16,6 +16,13 @@ export interface DecisionParcial {
   motivo: string;
   titulo: string | null;
   texto: string;
+  /**
+   * Unidades temáticas del turno (1 a 4), en orden de aparición — pedido 04.
+   *
+   * Sólo viene con `clase === 'semilla'`. `titulo` y `texto` son los del **primer** tema (así el
+   * cliente que dibuja un solo fantasma sigue funcionando); la cadena completa se dibuja desde acá.
+   */
+  temas?: { titulo: string; texto: string }[];
 }
 
 /**
