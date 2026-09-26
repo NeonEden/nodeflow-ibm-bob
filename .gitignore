@@ -119,6 +119,14 @@ build/
 # Add project-specific patterns below
 # ============================================
 
+# --- Excepciones a los patrones de seguridad del template ---------------------
+# En Windows git compara sin distinguir mayúsculas (core.ignorecase=true), así que `*apikey*` matchea
+# un archivo de UI legítimo del proyecto y lo dejaba FUERA del repo: el CI lo cazó (App.tsx no
+# encontraba `./components/ApiKeyModal`), porque local el archivo está en disco y `tsc` pasaba igual.
+# Regla: si un patrón de seguridad del template se come un archivo del proyecto, se excepciona acá,
+# explícito y con el motivo — nunca se quita el patrón.
+!src/components/ApiKeyModal.tsx
+
 # --- NodeFlow (migrado 26/09/2026) -------------------------------------------
 # Artefactos de build: no se versionan nunca.
 src-tauri/target/
