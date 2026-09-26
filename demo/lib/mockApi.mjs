@@ -257,10 +257,15 @@ async function planDeVoz(texto, ip = 'anon') {
 
 // ---------------------------------------------------------------- token de AssemblyAI
 
-async function tokenAssemblyAI() {
-  const clave = process.env.ASSEMBLYAI_API_KEY || (existsSync(join(AQUI, '..', 'clave-assemblyai.txt'))
+/** La clave del STT: del entorno (Vercel) o del archivo local que no se publica. */
+function claveAssemblyAI() {
+  return process.env.ASSEMBLYAI_API_KEY || (existsSync(join(AQUI, '..', 'clave-assemblyai.txt'))
     ? readFileSync(join(AQUI, '..', 'clave-assemblyai.txt'), 'utf-8').trim()
     : '');
+}
+
+async function tokenAssemblyAI() {
+  const clave = claveAssemblyAI();
   if (!clave) return { status: 503, json: { success: false, error: 'El demo no tiene clave de AssemblyAI configurada.' } };
   const r = await fetch('https://streaming.assemblyai.com/v3/token?expires_in_seconds=600', {
     headers: { authorization: clave },
@@ -709,6 +714,53 @@ const WAV_SILENCIO = (() => {
   return Buffer.concat([cab, datos]);
 })();
 
+// ---------------------------------------------------------------- segmentador del parcial (pedido 06)
+// Espeja la lógica del backend en Rust (`src-tauri/src/segmentador.rs`): determinista, sin modelo (ADR 0005).
+// Existe porque el cliente consulta `/api/voz/parcial` y, sin respuesta, cae a su regla local (un solo
+// borrador): era la razón por la que la cadena de temas —lo que el lienzo hace hoy— no se veía en la web.
+
+/** Un «no» suelto no cuenta: `nodo`, `norte`, `nota` y `no sé` empiezan igual. Marcadores inequívocos. */
+const MARCADORES_CORRECCION = ['no,', 'mejor dicho', 'en realidad', 'olvidate', 'quise decir', 'corrijo', 'esperá,', 'espera,'];
+
+/** Conectores que marcan un tema nuevo. Van las dos grafías (el reconocimiento puede devolver cualquiera). */
+const MARCADORES_TEMA = ['otra cosa', 'y también', 'y tambien', 'además', 'ademas', 'por otro lado', 'ahora', 'después', 'despues', 'paso dos', 'segundo', 'tercero'];
+
+/** Cuántas palabras del texto forman el título de cada tema. */
+const PALABRAS_TITULO = 7;
+
+/** Techo de temas por turno, igual que el backend. */
+const MAX_TEMAS = 4;
+
+const palabras = (t) => String(t || '').trim().split(/\s+/).filter(Boolean);
+
+function tituloDe(texto) {
+  const p = palabras(texto).slice(0, PALABRAS_TITULO);
+  if (!p.length) return '';
+  const t = p.join(' ').replace(/^[\s,.;:¡!¿?"'()«»“”\-]+/, '').replace(/[\s,.;:«»“”]+$/, '');
+  return t || p.join(' ');
+}
+
+/** Parte el turno en unidades temáticas: marcador explícito → techo 4 → la unidad corta se pega a la anterior. */
+function partirEnTemas(texto) {
+  const patron = new RegExp('\\b(' + MARCADORES_TEMA.join('|') + ')\\b', 'gi');
+  const crudo = String(texto)
+    .replace(patron, '\u0000')
+    .split('\u0000')
+    .map((s) => s.trim().replace(/^[,.;:¡!¿?\s]+/, '').trim())
+    .filter(Boolean);
+
+  const unidades = [];
+  for (const u of crudo) {
+    if (palabras(u).length < 3 && unidades.length) unidades[unidades.length - 1] += ' ' + u;
+    else unidades.push(u);
+  }
+  if (unidades.length > MAX_TEMAS) {
+    const resto = unidades.splice(MAX_TEMAS - 1).join(' ');
+    unidades.push(resto);
+  }
+  return unidades.map((t) => ({ titulo: tituloDe(t), texto: t }));
+}
+
 export async function handle({ method, ruta, query, body, ip = 'anon' }) {
   const m = (method || 'GET').toUpperCase();
   const t0 = Date.now();
@@ -736,11 +788,46 @@ export async function handle({ method, ruta, query, body, ip = 'anon' }) {
 
   // --- voz
   if (ruta === '/api/voz/jwt') return tokenAssemblyAI();
-  if (ruta === '/api/voz/estado') return json(200, { ...(FIXTURAS.get('/api/voz/estado') || {}), configurada: true, proveedor: 'assemblyai', idioma: 'es', aviso: null });
+  // `configurada` NO se hardcodea: si no hay clave, el demo no puede pedir token y el panel diría «listo»
+  // mientras el dictado falla. Se refleja la realidad (y se avisa por qué), en vez de mentir.
+  if (ruta === '/api/voz/estado') {
+    const hayClave = Boolean(claveAssemblyAI());
+    return json(200, {
+      ...(FIXTURAS.get('/api/voz/estado') || {}),
+      configurada: hayClave,
+      proveedor: 'assemblyai',
+      idioma: 'es',
+      aviso: hayClave ? null : 'Demo en modo vitrina: sin clave de AssemblyAI no hay dictado en vivo. La voz real corre en la app de escritorio.',
+    });
+  }
   // TTS: el backend real sintetiza con Kokoro (127.0.0.1:8125) y devuelve un WAV. En el demo web no hay
   // motor local, así que devolvemos 0,25 s de silencio con el mismo content-type: el panel reproduce algo
   // válido en vez de tirar «La voz local no respondió» en cada turno.
   if (ruta === '/api/voz/decir') return { status: 200, body: WAV_SILENCIO, contentType: 'audio/wav' };
+  // Segmentador del parcial (pedido 06). Sin esto el cliente caía a su regla local y el lienzo del demo
+  // dibujaba un solo nodo: la cadena de temas —lo que hace hoy el lienzo— no se veía en la web.
+  if (ruta === '/api/voz/parcial') {
+    const texto = String(body?.texto || '').trim();
+    const n = palabras(texto).length;
+    if (n < 3) return json(200, { clase: 'nada', motivo: `menos de 3 palabras (${n})`, titulo: null, texto: '' });
+    const arranque = palabras(texto).slice(0, 5).join(' ').toLowerCase();
+    if (MARCADORES_CORRECCION.some((k) => arranque.includes(k))) {
+      return json(200, { clase: 'correccion', motivo: 'marcador de corrección en los primeros 5 tokens', titulo: null, texto });
+    }
+    // Al cerrar el turno llegan los temas partidos; en los parciales intermedios, sólo el juicio.
+    if (body?.es_final) {
+      const temas = partirEnTemas(texto);
+      const primero = temas[0] || { titulo: tituloDe(texto), texto };
+      return json(200, {
+        clase: 'semilla',
+        motivo: `turno cerrado con ${n} palabras`,
+        titulo: primero.titulo,
+        texto: primero.texto,
+        temas,
+      });
+    }
+    return json(200, { clase: 'semilla', motivo: `parcial estable con ${n} palabras`, titulo: tituloDe(texto), texto });
+  }
 
   // --- el plan de voz y las acciones del lienzo (ramificar, hibridar, puentes, condensar…)
   if (ruta === '/api/ai/action') {

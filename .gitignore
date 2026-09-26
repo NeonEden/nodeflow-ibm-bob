@@ -146,3 +146,6 @@ cerebro/
 
 # El bundle de la demo se construye en local y se versiona a propósito (demo/public).
 !demo/public/
+
+# Config local de Vercel (ids de proyecto, no van al repo)
+.vercel/

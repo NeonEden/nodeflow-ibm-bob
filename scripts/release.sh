@@ -95,7 +95,7 @@ fi
 echo "updater: $(basename "$UP") + $(basename "$SIG")"
 
 # El manifiesto es lo que la app consulta: versión, fecha, y por plataforma la firma y de dónde bajar.
-URL="https://github.com/NeonEden/NodeFlow/releases/download/v$nueva/$(basename "$UP")"
+URL="https://github.com/NeonEden/nodeflow-ibm-bob/releases/download/v$nueva/$(basename "$UP")"
 cat > latest.json <<JSON
 {
   "version": "$nueva",
