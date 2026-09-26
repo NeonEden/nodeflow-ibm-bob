@@ -257,10 +257,15 @@ async function planDeVoz(texto, ip = 'anon') {
 
 // ---------------------------------------------------------------- token de AssemblyAI
 
-async function tokenAssemblyAI() {
-  const clave = process.env.ASSEMBLYAI_API_KEY || (existsSync(join(AQUI, '..', 'clave-assemblyai.txt'))
+/** La clave del STT: del entorno (Vercel) o del archivo local que no se publica. */
+function claveAssemblyAI() {
+  return process.env.ASSEMBLYAI_API_KEY || (existsSync(join(AQUI, '..', 'clave-assemblyai.txt'))
     ? readFileSync(join(AQUI, '..', 'clave-assemblyai.txt'), 'utf-8').trim()
     : '');
+}
+
+async function tokenAssemblyAI() {
+  const clave = claveAssemblyAI();
   if (!clave) return { status: 503, json: { success: false, error: 'El demo no tiene clave de AssemblyAI configurada.' } };
   const r = await fetch('https://streaming.assemblyai.com/v3/token?expires_in_seconds=600', {
     headers: { authorization: clave },
@@ -783,7 +788,18 @@ export async function handle({ method, ruta, query, body, ip = 'anon' }) {
 
   // --- voz
   if (ruta === '/api/voz/jwt') return tokenAssemblyAI();
-  if (ruta === '/api/voz/estado') return json(200, { ...(FIXTURAS.get('/api/voz/estado') || {}), configurada: true, proveedor: 'assemblyai', idioma: 'es', aviso: null });
+  // `configurada` NO se hardcodea: si no hay clave, el demo no puede pedir token y el panel diría «listo»
+  // mientras el dictado falla. Se refleja la realidad (y se avisa por qué), en vez de mentir.
+  if (ruta === '/api/voz/estado') {
+    const hayClave = Boolean(claveAssemblyAI());
+    return json(200, {
+      ...(FIXTURAS.get('/api/voz/estado') || {}),
+      configurada: hayClave,
+      proveedor: 'assemblyai',
+      idioma: 'es',
+      aviso: hayClave ? null : 'Demo en modo vitrina: sin clave de AssemblyAI no hay dictado en vivo. La voz real corre en la app de escritorio.',
+    });
+  }
   // TTS: el backend real sintetiza con Kokoro (127.0.0.1:8125) y devuelve un WAV. En el demo web no hay
   // motor local, así que devolvemos 0,25 s de silencio con el mismo content-type: el panel reproduce algo
   // válido en vez de tirar «La voz local no respondió» en cada turno.
