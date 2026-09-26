@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { X, Mic, Square, Loader2, Sparkles, Check, AlertTriangle, Wand2, Target, Layers, MessageSquarePlus, Link2, Quote, Gauge, Volume2, VolumeX, PenLine, CornerDownRight, MessageCircleQuestion } from 'lucide-react';
 import { type EstadoVoz } from '../services/speechmaticsRt';
+import { decidirAtajo } from '../utils/toggleVoz';
 import { crearClienteStt, type ClienteStt } from '../services/sttRt';
 import { apiUrl } from '../services/apiBase';
 import { trazaVoz } from '../services/trazaVoz';
@@ -712,7 +713,16 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
     // Dedup: si este turno ya se cerró (puede pasar con el toggle + released en el mismo ciclo),
     // ignorar silenciosamente. Traza para poder contarlo después.
     if (turnoUltimoCierreRef.current === turnoRef.current) {
-      trazaVoz('turno.cierre_duplicado', { turno: turnoRef.current });
+      // El turno ya se cerró. Antes esto salía **sin tocar el estado**: si el estado había quedado en
+      // «escuchando» (el motor todavía pensando), cada `pressed` del atajo volvía a caer acá, el corte se
+      // descartaba y el panel quedaba clavado en «escuchando» sin salida — medido en el log del 26/09/2026:
+      // 19 repeticiones a ~1 Hz, con el lienzo guardándose entre medio.
+      if (estado === 'escuchando') {
+        setEstado('inactivo');
+        setDetalleEstado('');
+        if (rtRef.current?.viva) cerrarSesion('cierre_duplicado');
+      }
+      trazaVoz('turno.cierre_duplicado', { turno: turnoRef.current, estado });
       return;
     }
     const rt = rtRef.current;
@@ -874,6 +884,11 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
       return;
     }
 
+    // El turno ya cerro: el microfono NO esta escuchando. Dejar el estado en 'escuchando' mientras el motor
+    // arma el plan era la otra mitad del bucle del 26/09 (el guard de `cortar()` no tocaba el estado y el
+    // atajo veia «mic encendido» para siempre). Los caminos del modo conversacion salen por `return` antes de
+    // aca, asi que siguen dejando el panel escuchando como corresponde.
+    setEstado('inactivo');
     setPensando(true);
     try {
       const { plan: p, modelo, uso } = await pedirPlanVoz(dictado);
@@ -938,21 +953,34 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
     if (!pedidoExterno) return;
     // El pedido del atajo se atiende también con el panel CERRADO: es justamente así como se usa (dictar
     // sin abrir el modal, con el lienzo a la vista).
+    // El juicio vive en `utils/toggleVoz.ts` (lógica pura, con sus 9 casos testeado aparte). El caso que
+    // importa acá es `reiniciar`: turno ya cerrado + estado todavía en «escuchando» ⇒ hay que devolver el
+    // panel a inactivo, no volver a cortar (ese era el bucle del 26/09/2026).
+    const turnoYaCerrado = turnoUltimoCierreRef.current === turnoRef.current;
     if (pedidoExterno.accion === 'empezar') {
-      const micEncendido = estado !== 'inactivo' && estado !== 'error';
-      if (micEncendido) {
-        // Toggle: el mismo botón que empezó, cierra.
-        trazaVoz('atajo.toggle', { turno: turnoRef.current, estado });
-        void cortarRef.current?.();
-      } else {
-        atajoPresadoRef.current = performance.now();
+      const accion = decidirAtajo({ fase: 'pressed', estado, msDesdePressed: 0, turnoYaCerrado });
+      // El timestamp se actualiza SIEMPRE, no solo al abrir: si el pressed se ignora (sesion conectando o
+      // cerrando) y no se toca, un `released` posterior se mide contra un toque viejo y puede cortar un turno
+      // en curso. Lo encontro la auditoria independiente del 26/09/2026.
+      atajoPresadoRef.current = performance.now();
+      if (accion === 'abrir') {
         void empezarRef.current?.('atajo');
+      } else if (accion === 'ignorar') {
+        trazaVoz('atajo.ignorado', { turno: turnoRef.current, estado });
+      } else {
+        trazaVoz('atajo.toggle', { turno: turnoRef.current, estado, accion });
+        void cortarRef.current?.();
       }
     } else {
       // released: sólo cortar si el pressed duró al menos MS_UMBRAL_TOGGLE (push-to-talk).
       const duracion = performance.now() - atajoPresadoRef.current;
-      if (duracion >= MS_UMBRAL_TOGGLE) {
+      const accion = decidirAtajo({ fase: 'released', estado, msDesdePressed: duracion, turnoYaCerrado });
+      if (accion === 'cerrar') {
         void cortarRef.current?.();
+      } else if (accion === 'ignorar') {
+        // No es un «toque corto»: la decisión fue no meterse (sesión en tránsito o turno ya cerrado).
+        // Distinguirlas importa: en el próximo diagnóstico se leen distinto.
+        trazaVoz('atajo.ignorado', { turno: turnoRef.current, estado, duracion_ms: Math.round(duracion) });
       } else {
         trazaVoz('atajo.toque_corto', { duracion_ms: Math.round(duracion), turno: turnoRef.current });
       }

@@ -158,6 +158,28 @@ const ES = {
   'voz.pie': 'Realtime del proveedor activo + el motor elegido en la app',
   'voz.idiomaAviso': 'La voz usa el idioma de la interfaz.',
   'voz.atajo': 'Ctrl+Alt+Espacio: dictá desde donde estés, sin abrir la app.',
+  // --- bienvenida: lo primero que ve alguien que abre la app (26/09/2026)
+  'onboarding.titulo': 'Bienvenido a NodeFlow',
+  'onboarding.bajada': 'Un lienzo para pensar en voz alta: hablás y las ideas aparecen como nodos.',
+  'onboarding.hablar.titulo': 'Creá ideas hablando',
+  'onboarding.hablar.texto':
+    'Apretá Ctrl+Alt+Espacio desde donde estés y contá lo que tenés en la cabeza: mientras hablás, las ideas se van dibujando en el lienzo. Ctrl+Z deshace.',
+  'onboarding.hablar.boton': 'Ver todos los atajos',
+  'onboarding.ia.titulo': 'Agentes que trabajan sobre el lienzo',
+  'onboarding.ia.texto':
+    'Con una clave de IA el lienzo se ordena, investiga y conecta solo. Sirve cualquiera: Azure OpenAI, OpenAI, Gemini u Ollama local.',
+  'onboarding.ia.boton': 'Cargar mi clave de IA',
+  'onboarding.voz.titulo': 'Dictado en vivo',
+  'onboarding.voz.texto':
+    'El dictado corre sobre AssemblyAI. Sin la clave podés escribir y editar a mano, pero no dictar.',
+  'onboarding.voz.boton': 'Cargar mi clave de voz',
+  'onboarding.atajos': 'Ver todos los atajos',
+  'onboarding.empezar': 'Empezar',
+  'onboarding.listo': 'listo',
+  'apikey.voz.titulo': 'Clave del dictado',
+  'apikey.voz.descripcion':
+    'Con tu clave de AssemblyAI funciona el dictado en vivo. Sin ella podés escribir y editar a mano.',
+  'onboarding.falta': 'falta',
   // HUD flotante: el atajo dicta sin abrir el modal, así el lienzo queda a la vista.
   'voz.hud.escuchando': 'Escuchando…',
   'voz.hud.pensando': 'Armando el plan…',
@@ -349,6 +371,28 @@ const EN: Record<Clave, string> = {
   'voz.motorProfundo': 'Deep engine',
   'voz.pie': 'Realtime from the active provider + the engine chosen in the app',
   'voz.idiomaAviso': 'Voice uses the interface language.',
+  // --- welcome: the first thing anyone sees when the app opens (26/09/2026)
+  'onboarding.titulo': 'Welcome to NodeFlow',
+  'onboarding.bajada': 'A canvas for thinking out loud: you speak and the ideas show up as nodes.',
+  'onboarding.hablar.titulo': 'Create ideas by talking',
+  'onboarding.hablar.texto':
+    'Press Ctrl+Alt+Space from wherever you are and say what is on your mind: the ideas get drawn on the canvas as you speak. Ctrl+Z undoes it.',
+  'onboarding.hablar.boton': 'See all shortcuts',
+  'onboarding.ia.titulo': 'Agents that work on the canvas',
+  'onboarding.ia.texto':
+    'With an AI key the canvas gets ordered, researched and connected on its own. Any provider works: Azure OpenAI, OpenAI, Gemini or local Ollama.',
+  'onboarding.ia.boton': 'Add my AI key',
+  'onboarding.voz.titulo': 'Live dictation',
+  'onboarding.voz.texto':
+    'Dictation runs on AssemblyAI. Without the key you can still write and edit by hand, but not dictate.',
+  'onboarding.voz.boton': 'Add my voice key',
+  'onboarding.atajos': 'See all shortcuts',
+  'onboarding.empezar': 'Start',
+  'onboarding.listo': 'ready',
+  'apikey.voz.titulo': 'Dictation key',
+  'apikey.voz.descripcion':
+    'Your AssemblyAI key turns on live dictation. Without it you can still type and edit by hand.',
+  'onboarding.falta': 'missing',
   'voz.atajo': 'Ctrl+Alt+Space: dictate from anywhere, without opening the app.',
   // Floating HUD: the shortcut dictates without opening the modal, so the canvas stays visible.
   'voz.hud.escuchando': 'Listening…',
