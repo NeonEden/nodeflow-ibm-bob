@@ -28,6 +28,7 @@ export type EventoVoz =
   | 'sesion.cerrada'
   | 'ocupado'
   | 'atajo.toggle'
+  | 'atajo.ignorado'
   | 'atajo.toque_corto'
   | 'error';
 
