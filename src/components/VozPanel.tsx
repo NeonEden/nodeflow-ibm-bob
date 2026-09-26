@@ -59,11 +59,13 @@ interface VozPanelProps {
   /** El turno se cerró: el borrador vivo deja de tener sentido y se retira del lienzo. */
   onTurnoCerrado?: () => void;
   /**
-   * Decisión FINAL del turno: la que el segmentador devuelve con `es_final`, con los temas del dictado
-   * completo. Es la que crea los nodos en el lienzo (pedido 06). No se usa `onTurnoCerrado` para esto
-   * porque ése se dispara al cortar el turno en el motor, antes de que el segmentador juzgue el texto
-   * completo; y no se usa `onDecisionParcial` porque los parciales estables intermedios también traen
-   * temas y crearían nodos durante el dictado.
+   * Decisión FINAL del turno: la que el segmentador devuelve para el texto COMPLETO del dictado, con sus
+   * temas. Es la que crea los nodos en el lienzo (pedido 06), y se llama una sola vez por turno.
+   *
+   * Por qué no cuelga de `onFinal` del motor: Speechmatics emite `AddTranscript` **por cada segmento
+   * estable** (`speechmaticsRt.ts`), así que `onFinal` se dispara varias veces dentro de un mismo turno —
+   * engancharlo ahí creaba una cadena de nodos por segmento, con textos a medio dictar. Sólo el cierre del
+   * turno tiene el texto completo.
    */
   onTurnoFinal?: (temas: { titulo: string; texto: string }[] | null) => void;
 }
@@ -604,9 +606,6 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
           // Respuesta stale: si el texto ya cambió, esta decisión habla de una frase vieja.
           if (!esFinal && textoEnVueloRef.current !== texto) return;
           onDecisionParcial?.(decision);
-          // Cierre del turno: acá llegan los temas del dictado completo. Es el único punto donde se
-          // crean nodos (pedido 06): un parcial estable intermedio también trae `temas`.
-          if (esFinal) onTurnoFinal?.(decision?.temas ?? null);
         });
       };
 
@@ -769,6 +768,21 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
         void seguirEscuchando();
       }
       return;
+    }
+    // ── Los temas del turno se crean como nodos (pedido 06) ─────────────────────────────────────
+    // Se consulta al segmentador con el texto COMPLETO del dictado, y sólo desde acá: el `onFinal` del
+    // motor se dispara por cada segmento estable (`speechmaticsRt.ts` → `AddTranscript`), así que engancharlo
+    // ahí creaba una cadena de nodos por segmento, con texto a medio dictar. El guard de dedup del principio
+    // de `cortar()` garantiza un solo cierre por turno, así que esto corre una sola vez.
+    if (onTurnoFinal) {
+      void clasificarParcial({
+        turno_id: sesionRef.current,
+        texto: dictado,
+        ms_desde_cambio: 999,
+        es_final: true,
+      })
+        .then((d) => onTurnoFinal(d?.temas ?? null))
+        .catch(() => onTurnoFinal(null));
     }
     // ── Eco del micrófono ─────────────────────────────────────────────────────────────────────
     // Con parlantes, el motor de transcripción escucha lo que la propia app acaba de decir. No es una
