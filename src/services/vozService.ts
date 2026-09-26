@@ -19,6 +19,25 @@ export interface DecisionParcial {
 }
 
 /**
+ * Cuánto tiene que quedarse quieto el parcial antes de consultar al segmentador.
+ *
+ * El segmentador del backend exige que el texto no haya cambiado durante su propio umbral
+ * (`MS_ESTABLE` en `segmentador.rs`, 250 ms). Si el cliente consultara apenas llega un parcial
+ * nuevo, `ms_desde_cambio` valdría ~0 y el backend contestaría «nada» **siempre**: su juicio nunca
+ * se activaría y el fantasma dependería sólo de la regla local de `draftVoz`. Por eso el cliente
+ * espera a que el parcial se quede quieto y consulta con el reloj ya cumplido.
+ *
+ * Esta constante tiene que quedar por encima del umbral del segmentador: si bajara, la consulta
+ * llegaría con el reloj corto y el backend volvería a decir «nada» (hay un test que lo ancla).
+ */
+export const MS_ESTABILIDAD_CLIENTE = 300;
+
+/** Tiempo (ms) que el parcial lleva sin cambiar. Nunca negativo (`performance.now()` puede repetir). */
+export function msQuieto(ahora: number, ultimoCambio: number): number {
+  return Math.max(0, Math.round(ahora - ultimoCambio));
+}
+
+/**
  * Manda el parcial del turno al segmentador del backend (`POST /api/voz/parcial`) y devuelve la
  * decisión: si hay que dibujar un borrador, si el usuario se corrigió, o si hay que esperar más.
  *

@@ -8,7 +8,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clasificarParcial } from './vozService';
+import { clasificarParcial, msQuieto, MS_ESTABILIDAD_CLIENTE } from './vozService';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────────────────────────
 
@@ -203,5 +203,30 @@ describe('pipeline de parciales — secuencia estática sin micrófono ni backen
       // null = backend ausente; el cliente usará la regla local (invariante de ADR 0005)
       expect(d).toBeNull();
     }
+  });
+});
+
+// ── El reloj del cliente: sin esto el juicio del backend nunca se activa ─────────────────────────
+
+describe('reloj del cliente (msQuieto / MS_ESTABILIDAD_CLIENTE)', () => {
+  it('devuelve el tiempo transcurrido desde el último cambio', () => {
+    expect(msQuieto(1000, 700)).toBe(300);
+    expect(msQuieto(1000, 1000)).toBe(0);
+  });
+
+  it('nunca devuelve un tiempo negativo (performance.now() puede repetir o retroceder)', () => {
+    // Un valor negativo pasaría el filtro «< 250 ms» del segmentador como si fuera reciente,
+    // o peor: se leería como una pausa larguísima según el signo. Se ancla en 0.
+    expect(msQuieto(700, 1000)).toBe(0);
+  });
+
+  it('el cliente espera MÁS que el umbral del segmentador, o el backend diría «nada» siempre', () => {
+    // ANCLA DEL DEFECTO (26/09/2026): la primera versión consultaba al backend apenas llegaba un
+    // parcial, así que `ms_desde_cambio` valía ~0 y `segmentador.rs` (que exige >= 250 ms sin
+    // cambios) contestaba «nada» en cada llamada: el juicio del backend quedaba decorativo y el
+    // fantasma dependía sólo de la regla local. El cliente tiene que esperar a que el parcial se
+    // quede quieto, y ese umbral (300) tiene que superar el del segmentador (250) con holgura para
+    // que el reloj llegue cumplido del otro lado de la red.
+    expect(MS_ESTABILIDAD_CLIENTE).toBeGreaterThan(250);
   });
 });
