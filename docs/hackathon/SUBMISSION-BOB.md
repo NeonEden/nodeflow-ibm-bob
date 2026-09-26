@@ -4,6 +4,24 @@
 `https://lablab.ai/ai-hackathons/ibm-bob-2-hackathon/live`: *«You have until Sep 27, 2026, 15:00 UTC to submit»*.
 Premios: $10.000 ($5.000 / $3.000 / $2.000).
 
+## ⚠️ El mismo paquete sirve para los DOS hackathons
+
+lablab.ai usa la **misma plantilla de submission** en los dos eventos. Comprobado con la página del de AssemblyAI
+(cierra **30/09 a las 12:00 AR**), que pide textualmente: *«Basic information»*, *«Cover image»*,
+*«Video presentation»*, *«Slide presentation»*, *«Public GitHub repository»*, *«Application URL»*.
+
+O sea: todo lo que se arme para Bob —cover, slides, video, textos— **se reusa el miércoles**, con dos cambios:
+
+| Pieza | Para Bob (27/09) | Para AssemblyAI (30/09) |
+|---|---|---|
+| **Foco del video** | el desarrollo asistido: Bob escribió el segmentador y el cliente | la voz: el lienzo dibujándose **mientras hablás** |
+| **Descripción larga** | arranca por el uso de Bob 2.0 y la evidencia | arranca por la experiencia de voz y el flujo sin fricción |
+| Cover, slides, repo, app URL | **los mismos** | **los mismos** |
+
+Conviene grabar **una sola toma** con ambos focos cubiertos (dictar una idea ya muestra las dos cosas: la voz
+funcionando y el código que Bob escribió detrás), y después recortar/montar dos versiones de 3 minutos. El trabajo
+del video es el más caro: hacerlo una vez en lugar de dos es la diferencia entre llegar y no llegar.
+
 ---
 
 ## 1 · Textos del formulario (listos para copiar)
