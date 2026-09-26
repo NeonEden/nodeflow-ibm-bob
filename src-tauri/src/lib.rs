@@ -21,6 +21,7 @@ mod memoria;
 mod motores;
 mod parche;
 mod semantica;
+pub mod segmentador;
 mod server;
 mod sesiones;
 mod stt;

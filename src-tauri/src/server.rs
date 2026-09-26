@@ -242,6 +242,7 @@ pub fn spawn(data_dir: PathBuf, env_key: Option<String>, vault: Arc<Vault>, memo
             .route("/api/voz/proveedores", get(voz_proveedores))
             .route("/api/voz/proveedor", post(voz_proveedor))
             .route("/api/voz/traza", post(voz_traza))
+            .route("/api/voz/parcial", post(voz_parcial))
             .route("/api/claves/estado", get(claves_estado))
             .route("/api/claves/migrar", post(claves_migrar))
             .route("/api/claves", post(claves_guardar))
@@ -3182,6 +3183,56 @@ fn linea_traza(evento: &str, campos: &str) -> String {
     )
     .trim_end()
     .to_string()
+}
+
+/// `POST /api/voz/parcial` — clasifica el parcial del turno de voz para el lienzo en vivo (Fase C).
+///
+/// Responde en < 50 ms: es texto puro, sin red ni modelos. El endpoint recibe el transcript parcial
+/// que emite AssemblyAI mientras el usuario habla y devuelve si vale la pena dibujar un borrador,
+/// si el usuario está corrigiendo lo que dijo, o si hay que esperar más.
+///
+/// Cuerpo: `{ "turno_id": "…", "texto": "…", "anterior": "…", "ms_desde_cambio": 120, "es_final": false }`
+/// Respuesta: `{ "clase": "nada"|"semilla"|"correccion", "motivo": "…", "titulo": "…"|null, "texto": "…" }`
+async fn voz_parcial(Json(body): Json<Value>) -> impl IntoResponse {
+    let texto = match body["texto"].as_str() {
+        Some(t) => t,
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "success": false, "error": "Falta el campo `texto`." })),
+            );
+        }
+    };
+    let anterior = body["anterior"].as_str();
+    let ms_desde_cambio = body["ms_desde_cambio"].as_u64();
+    let es_final = body["es_final"].as_bool().unwrap_or(false);
+
+    let entrada = crate::segmentador::Entrada {
+        texto,
+        anterior,
+        ms_desde_cambio,
+        es_final,
+    };
+    let dec = crate::segmentador::clasificar(&entrada);
+
+    let clase_str = match dec.clase {
+        crate::segmentador::ClaseParcial::Nada => "nada",
+        crate::segmentador::ClaseParcial::Semilla => "semilla",
+        crate::segmentador::ClaseParcial::Correccion => "correccion",
+    };
+
+    // El motivo va al log: permite auditar qué se descartó y cuánto.
+    log::info!("voz/parcial clase={clase_str} motivo=\"{}\"", dec.motivo);
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "clase": clase_str,
+            "motivo": dec.motivo,
+            "titulo": dec.titulo,
+            "texto": dec.texto,
+        })),
+    )
 }
 
 /// `POST /api/ai/evaluar` — corre la planilla sobre los motores pedidos (por defecto, los locales).
