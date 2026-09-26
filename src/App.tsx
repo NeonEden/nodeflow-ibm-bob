@@ -674,7 +674,12 @@ export default function App() {
           const textoParaFantasma = decisionParcial.texto || draftVoz;
           const ancla =
             nds.find((n) => n.id !== ID_FANTASMA && n.data.isRoot) ?? nds.find((n) => n.id !== ID_FANTASMA);
-          const fantasma = nodoFantasma(textoParaFantasma, ancla) as CustomNode;
+          // `nodoFantasma` devuelve null si el texto todavía no es una idea, y el cast `as CustomNode` de
+          // antes lo tapaba: seguía `fantasma.data.title = …` sobre null (crash) y en el otro camino se
+          // insertaba un null en la lista de nodos. Un `semilla` con texto vacío y sin borrador alcanza
+          // para llegar acá. Lo señaló la revisión externa del 26/09/2026.
+          const fantasma = nodoFantasma(textoParaFantasma, ancla) as CustomNode | null;
+          if (!fantasma) return sinFantasma.length === nds.length ? nds : sinFantasma;
           if (decisionParcial.clase === 'correccion') {
             // Marcar el fantasma como corrección para que el estilo lo refleje.
             (fantasma.data as unknown as Record<string, unknown>).ghostCorreccion = true;
@@ -4835,6 +4840,8 @@ export default function App() {
         // Por qué acá y no en `onTurnoCerrado`: ése se dispara al cortar el turno en el motor, antes de
         // que el segmentador juzgue el texto completo; los temas llegan recién con la decisión final.
         onTurnoFinal={(temas) => {
+          // NOTA (26/09/2026): este handler se llama cuando el dictado pasó el filtro de eco del panel,
+          // así que la app ya no puede crear nodos con su propia voz.
           if (!temas?.length) return;
           const turno = Date.now();
           const ancla = nodes.find((n) => n.data.isRoot) ?? nodes[0] ?? null;
