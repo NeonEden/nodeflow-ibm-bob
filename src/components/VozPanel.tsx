@@ -4,7 +4,7 @@ import { type EstadoVoz } from '../services/speechmaticsRt';
 import { crearClienteStt, type ClienteStt } from '../services/sttRt';
 import { apiUrl } from '../services/apiBase';
 import { trazaVoz } from '../services/trazaVoz';
-import { getVozEstado, getVozJwt, pedirPlanVoz, describirComando, decir, hablarConElSistema, VozEstado, PlanVoz, VozComando } from '../services/vozService';
+import { getVozEstado, getVozJwt, pedirPlanVoz, describirComando, decir, hablarConElSistema, clasificarParcial, VozEstado, PlanVoz, VozComando } from '../services/vozService';
 import { useIdioma } from '../i18n/useIdioma';
 import { esAfirmativo, planEsConsulta } from '../utils/voz';
 
@@ -50,6 +50,12 @@ interface VozPanelProps {
    * crece, así que el consumidor tiene que ser barato.
    */
   onParcialVivo?: (texto: string) => void;
+  /**
+   * Decisión del segmentador del backend para el parcial actual. Se llama con `null` cuando el
+   * backend no contesta o tarda, para que App pueda caer a la regla local. Si llega, App usa esta
+   * decisión en lugar de `esIdeaEnVivo` para dibujar el fantasma (Fase C).
+   */
+  onDecisionParcial?: (d: import('../services/vozService').DecisionParcial | null) => void;
   /** El turno se cerró: el borrador vivo deja de tener sentido y se retira del lienzo. */
   onTurnoCerrado?: () => void;
 }
@@ -88,7 +94,7 @@ const EJEMPLOS = [
  * Panel de Voz (Speechmatics). Hablás, la transcripción aparece en vivo y al cortar el motor
  * propone un PLAN de operaciones sobre el lienzo — que se aprueba antes de aplicarse.
  */
-export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, onPrevisualizar, onAplicarComandos, tituloNodo, preguntaAbierta, onResponder, onInicioConversacion, onTurnoConversacion, pedidoExterno, onParcialVivo, onTurnoCerrado }) => {
+export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, onPrevisualizar, onAplicarComandos, tituloNodo, preguntaAbierta, onResponder, onInicioConversacion, onTurnoConversacion, pedidoExterno, onParcialVivo, onDecisionParcial, onTurnoCerrado }) => {
   // Textos del panel en el idioma activo. La voz (entrada y salida) sigue el mismo idioma desde el
   // backend, así que acá sólo se traduce la interfaz.
   const { t } = useIdioma();
@@ -198,6 +204,28 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
   const sesionInicioRef = useRef(0);
   const turnosServidosRef = useRef(0);
   const turnoRef = useRef(0);
+  /**
+   * Texto del parcial ANTERIOR del mismo turno: el segmentador lo necesita para detectar
+   * estabilidad (si el texto no cambió, el parcial lleva un rato estable y puede dibujarse).
+   */
+  const anteriorRef = useRef('');
+  /**
+   * Instante (performance.now) en que el texto del parcial cambió por última vez. Con esto se
+   * calcula `ms_desde_cambio` que el segmentador usa para descartar parciales que todavía están
+   * creciendo aunque el texto momentáneamente coincida con el anterior.
+   */
+  const ultimoCambioRef = useRef(0);
+  /**
+   * Timestamp del último fetch a `/api/voz/parcial` que se disparó. Se usa para el throttle
+   * (~150 ms) y para descartar respuestas de vuelos viejos (ver «una sola llamada en vuelo»).
+   */
+  const ultimaLlamadaRef = useRef(0);
+  /**
+   * Texto que se mandó en el último fetch en vuelo. Si cuando llega la respuesta el texto actual
+   * es distinto, la respuesta es stale y se descarta: evita que el fantasma muestre una frase ya
+   * corregida.
+   */
+  const textoEnVueloRef = useRef('');
   const t0PedidoRef = useRef(0);
   const t0ListoRef = useRef(0);
   const primerParcialRef = useRef(false);
@@ -522,6 +550,11 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
       sesionRef.current = nuevoIdSesion();
       sesionInicioRef.current = performance.now();
       turnosServidosRef.current = 0;
+      // Resetear el estado del segmentador al inicio de cada sesión: el turno nuevo empieza limpio.
+      anteriorRef.current = '';
+      ultimoCambioRef.current = performance.now();
+      ultimaLlamadaRef.current = 0;
+      textoEnVueloRef.current = '';
       const rt = crearClienteStt(sesion, {
         onEstado: (e, d) => {
           setEstado(e);
@@ -548,6 +581,35 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
           // y que no suenen a la propia voz: con parlantes la app se oiría a sí misma y se cortaría sola.
           const partes = t.trim().split(/\s+/).filter(Boolean);
           if (hablandoRef.current && partes.length >= 3 && !pareceMia(t)) interrumpirVoz();
+          // Segmentador del backend (Fase C): el juicio real del parcial.
+          // Throttle: máximo una llamada cada ~150 ms (el parcial puede llegar muchas veces).
+          // Si onDecisionParcial no está registrado, no tiene sentido llamar al backend.
+          if (onDecisionParcial) {
+            const ahora = performance.now();
+            // Actualizar el instante del último cambio del texto.
+            if (t !== anteriorRef.current) {
+              ultimoCambioRef.current = ahora;
+            }
+            if (ahora - ultimaLlamadaRef.current >= 150) {
+              ultimaLlamadaRef.current = ahora;
+              const textoEnviado = t;
+              textoEnVueloRef.current = textoEnviado;
+              const anterior = anteriorRef.current;
+              const ms = Math.round(ahora - ultimoCambioRef.current);
+              anteriorRef.current = t;
+              void clasificarParcial({
+                turno_id: sesionRef.current,
+                texto: textoEnviado,
+                anterior: anterior || undefined,
+                ms_desde_cambio: ms,
+                es_final: false,
+              }).then((decision) => {
+                // Descartar respuestas stale: si el texto actual ya cambió, esta respuesta es vieja.
+                if (textoEnVueloRef.current !== textoEnviado) return;
+                onDecisionParcial(decision);
+              });
+            }
+          }
         },
         onFinal: (t) => {
           fragRef.current = t;
