@@ -45,6 +45,14 @@ pub struct Decision {
     pub titulo: Option<String>,
     /// Texto limpio que se dibuja (sólo se recortan espacios; nunca se modifica el contenido).
     pub texto: String,
+    /// Temas extraídos cuando la clase es `Semilla`. Cada tema tiene título y texto.
+    pub temas: Option<Vec<Temas>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct Temas {
+    pub titulo: String,
+    pub texto: String,
 }
 
 // ── Marcadores de corrección ─────────────────────────────────────────────────────────────────────
@@ -63,6 +71,26 @@ const MARCADORES_CORRECCION: &[&str] = &[
     "esperá,",
     "espera,",
 ];
+
+// ── Marcadores de tema (corte de cadena) ────────────────────────────────────────────────────────
+// Se usan para dividir el turno en unidades temáticas según el contrato. La comparación es
+// case‑insensitive y sin acentos (se reutiliza la función `normalizar`).
+const MARCADORES_TEMA: &[&str] = &[
+    "otra cosa",
+    "y también",
+    "además",
+    "por otro lado",
+    "ahora",
+    "después",
+    "paso dos",
+    "segundo",
+    "tercero",
+];
+
+// Parámetros de la regla de partición.
+const PALABRAS_TITULO: usize = 7; // mismo valor que `draftVoz.tituloDelBorrador`
+const MIN_UNIDAD_PALABRAS: usize = 3;
+const MAX_TEMAS: usize = 4;
 
 // ── Normalización ────────────────────────────────────────────────────────────────────────────────
 //
@@ -89,6 +117,56 @@ fn normalizar(s: &str) -> String {
         })
         .collect()
 }
+
+use regex::RegexBuilder;
+fn titulo_del_borrador(texto: &str) -> String {
+    let palabras: Vec<&str> = texto.split_whitespace().take(PALABRAS_TITULO).collect();
+    if palabras.is_empty() {
+        return String::new();
+    }
+    let mut t = palabras.join(" ");
+    // Trim punctuation from ends
+    t = t.trim_matches(|c: char| c.is_ascii_punctuation() || c.is_whitespace()).to_string();
+    t
+}
+
+// Partition the turn into thematic units based on markers.
+fn particionar_temas(texto: &str) -> Vec<Temas> {
+    // Regex with case‑insensitive word boundaries for all markers.
+    let pattern = MARCADORES_TEMA.join("|");
+    let re = regex::RegexBuilder::new(&format!(r"(?i)\b({})\b", pattern))
+        .build()
+        .unwrap();
+    // Split, discarding the markers.
+    let raw: Vec<String> = re.split(texto).map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+    let mut unidades: Vec<String> = Vec::new();
+    for mut u in raw {
+        // Ensure minimum unit size.
+        let word_cnt = u.split_whitespace().count();
+        if word_cnt < MIN_UNIDAD_PALABRAS && !unidades.is_empty() {
+            let last = unidades.pop().unwrap();
+            let combined = format!("{} {}", last, u);
+            unidades.push(combined);
+        } else {
+            unidades.push(u);
+        }
+    }
+    // Apply ceiling of topics.
+    if unidades.len() > MAX_TEMAS {
+        let extra: Vec<String> = unidades.drain(MAX_TEMAS - 1..).collect();
+        let merged = extra.join(" ");
+        unidades[MAX_TEMAS - 1] = format!("{} {}", unidades[MAX_TEMAS - 1], merged);
+    }
+    // Build Temas structs.
+    unidades
+        .into_iter()
+        .map(|u| Temas {
+            titulo: titulo_del_borrador(&u),
+            texto: u,
+        })
+        .collect()
+}
+
 
 /// Parte el texto en tokens (por espacios) y devuelve el primer `n`.
 fn primeros_tokens(texto: &str, n: usize) -> Vec<String> {
@@ -190,6 +268,14 @@ pub fn clasificar(e: &Entrada) -> Decision {
     }
 
     // ── 4. Semilla: parcial estable con ≥ 3 palabras, o turno cerrado con ≥ 3 palabras.
+    // Generamos la lista de temas según los marcadores de tema del contrato.
+    let temas_lista = if e.es_final {
+        // al cerrar el turno, el cliente actual espera un solo tema completo
+        vec![Temas { titulo: titulo_del_borrador(&texto_limpio), texto: texto_limpio.clone() }]
+    } else {
+        // partición determinista
+        particionar_temas(&texto_limpio)
+    };
     Decision {
         clase: ClaseParcial::Semilla,
         motivo: if e.es_final {
@@ -199,6 +285,7 @@ pub fn clasificar(e: &Entrada) -> Decision {
         },
         titulo: None,
         texto: texto_limpio,
+        temas: Some(temas_lista),
     }
 }
 
