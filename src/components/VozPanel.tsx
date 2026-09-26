@@ -785,14 +785,26 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
     // ahí creaba una cadena de nodos por segmento, con texto a medio dictar. El guard de dedup del principio
     // de `cortar()` garantiza un solo cierre por turno, así que esto corre una sola vez.
     if (onTurnoFinal) {
+      // El `catch` cubre SOLO el fallo de la clasificación (red, timeout). Antes envolvía también al
+      // `onTurnoFinal`, así que una excepción del handler se leía como un fallo de red y se lo volvía a
+      // llamar con `null`: el error real quedaba tapado y el handler podía quedar a medias. Lo señaló la
+      // revisión externa del 26/09/2026 sobre el fix de `temas`.
+      const terminar = (temas: { titulo: string; texto: string }[] | null) => {
+        try {
+          onTurnoFinal(temas);
+        } catch (e) {
+          // Un error acá NO se reintenta con null: se declara y se sigue (el lienzo ya tiene lo suyo).
+          console.error('[voz] onTurnoFinal falló', e);
+        }
+      };
       void clasificarParcial({
         turno_id: sesionRef.current,
         texto: dictado,
         ms_desde_cambio: 999,
         es_final: true,
       })
-        .then((d) => onTurnoFinal(d?.temas ?? null))
-        .catch(() => onTurnoFinal(null));
+        .then((d) => terminar(d?.temas ?? null))
+        .catch(() => terminar(null));
     }
     // ── Eco del micrófono ─────────────────────────────────────────────────────────────────────
     // Con parlantes, el motor de transcripción escucha lo que la propia app acaba de decir. No es una
