@@ -784,8 +784,12 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
     // motor se dispara por cada segmento estable (`speechmaticsRt.ts` → `AddTranscript`), así que engancharlo
     // ahí creaba una cadena de nodos por segmento, con texto a medio dictar. El guard de dedup del principio
     // de `cortar()` garantiza un solo cierre por turno, así que esto corre una sola vez.
-    if (onTurnoFinal) {
-      // El `catch` cubre SOLO el fallo de la clasificación (red, timeout). Antes envolvía también al
+    // Si lo que se transcribió es la propia voz de la app (eco del micrófono), NO se materializa nada: el
+    // eco se maneja más abajo y crear un nodo con la voz de la app es peor que perder el turno. Antes este
+    // handler corría primero y podía crear nodos a partir del eco. Lo señaló la revisión externa del
+    // 26/09/2026.
+    if (onTurnoFinal && !esEco(dictado, dichoRef.current)) {
+      // El `catch` cubre SOLO el fallo de la clasificación (red, timeout).
       // `onTurnoFinal`, así que una excepción del handler se leía como un fallo de red y se lo volvía a
       // llamar con `null`: el error real quedaba tapado y el handler podía quedar a medias. Lo señaló la
       // revisión externa del 26/09/2026 sobre el fix de `temas`.
