@@ -180,11 +180,20 @@ Reglas (deterministas, sin modelo — ADR 0005):
 
 | Señal | Decisión |
 |---|---|
-| Parcial inestable (cambió respecto del anterior y no es final) | `nada` |
-| Menos de 3 palabras y no es final | `nada` |
 | Corrección explícita en los primeros 5 tokens (`no,` · `mejor dicho` · `en realidad` · `quise decir` · `olvidate`) | `correccion` |
+| El parcial cambió hace menos de 250 ms y no es final | `nada` |
+| **Sin** `ms_desde_cambio`: el parcial difiere del anterior y no es final | `nada` (criterio conservador) |
+| Menos de 3 palabras y no es final | `nada` |
 | `es_final: true` o parcial estable con ≥3 palabras | `semilla` |
 | Cualquier duda | `nada` — el ruido no dibuja, y lo descartado **se cuenta** para poder medirlo |
+
+> **Corrección del 26/09/2026 (medida, no teórica).** La primera implementación juzgaba la
+> inestabilidad comparando el parcial contra el anterior. Con parciales que **crecen palabra por
+> palabra** («quiero» → «quiero un» → «quiero un nodo»), eso descarta *siempre* mientras alguien habla:
+> el fantasma recién aparecía al cerrar el turno, que es exactamente lo que la Fase C viene a evitar.
+> El criterio correcto es el **tiempo** (`ms_desde_cambio`): si el parcial no cambió en ~250 ms, la
+> persona hizo una pausa y lo que dijo ya es una idea. La comparación con el anterior queda sólo como
+> red de seguridad para cuando el cliente no manda el tiempo.
 
 Invariantes que el endpoint tiene que respetar: nada de esto toca el grafo (no valida contra el lienzo ni
 crea propuestas; sólo clasifica texto); sin estado global que sobreviva al turno (una bandera «en curso»

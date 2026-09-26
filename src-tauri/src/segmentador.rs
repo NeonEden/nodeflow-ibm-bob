@@ -142,30 +142,32 @@ pub fn clasificar(e: &Entrada) -> Decision {
         };
     }
 
-    // ── 2. Estabilidad: si el parcial cambió respecto del anterior, todavía se está transcribiendo.
-    //       Sólo aplicable cuando no es final (end_of_turn cierra el turno aunque el texto cambiara
-    //       en el último instante).
+    // ── 2. Estabilidad. El criterio es el TIEMPO, no la diferencia con el parcial anterior.
+    //
+    // Medido el 26/09/2026, con la primera versión de esta regla: los parciales de
+    // Universal-Streaming crecen palabra por palabra («quiero» → «quiero un» → «quiero un nodo»),
+    // así que comparar contra el parcial anterior marcaba «inestable» en CADA tick y el fantasma no
+    // se dibujaba nunca mientras alguien habla — justo lo contrario de la Fase C (el lienzo tiene que
+    // dibujarse mientras se habla, no al terminar la frase). El tiempo es el dato correcto: si el
+    // parcial no cambió en ~250 ms, la persona hizo una pausa y lo que dijo ya es una idea.
+    //
+    // Sin `ms_desde_cambio` (el cliente no lo manda) se cae al criterio conservador: un parcial
+    // distinto del anterior, sin dato de tiempo, está en movimiento.
     if !e.es_final {
-        if let Some(ant) = e.anterior {
-            let ant_norm = normalizar(ant.trim());
-            if ant_norm != texto_norm {
-                return Decision {
-                    clase: ClaseParcial::Nada,
-                    motivo: "descartado: parcial inestable (cambió respecto del anterior)".into(),
-                    titulo: None,
-                    texto: texto_limpio,
-                };
-            }
-        }
-
-        // Aunque el texto no cambió, si llegó hace muy poco todavía puede seguir creciendo.
         if let Some(ms) = e.ms_desde_cambio {
             if ms < 250 {
                 return Decision {
                     clase: ClaseParcial::Nada,
-                    motivo: format!(
-                        "descartado: parcial estable pero reciente ({ms} ms < 250 ms)"
-                    ),
+                    motivo: format!("descartado: el parcial cambió hace {ms} ms (< 250 ms)"),
+                    titulo: None,
+                    texto: texto_limpio,
+                };
+            }
+        } else if let Some(ant) = e.anterior {
+            if normalizar(ant.trim()) != texto_norm {
+                return Decision {
+                    clase: ClaseParcial::Nada,
+                    motivo: "descartado: parcial en movimiento y sin dato de tiempo".into(),
                     titulo: None,
                     texto: texto_limpio,
                 };
@@ -308,5 +310,34 @@ mod tests {
     fn acentos_en_marcador() {
         let e = ent("Olvidate de eso y empecemos de nuevo", None, None, false);
         assert_eq!(clasificar(&e).clase, ClaseParcial::Correccion);
+    }
+
+    // ── Estabilidad por TIEMPO (corrección del 26/09/2026) ───────────────────────────────────────
+    //
+    // Estos dos tests existen porque la primera versión de la regla comparaba el parcial contra el
+    // anterior y descartaba todo lo que hubiera cambiado. Con parciales que crecen palabra por palabra
+    // («quiero» → «quiero un» → «quiero un nodo») eso significa descartar SIEMPRE mientras se habla:
+    // el fantasma sólo aparecía al cerrar el turno, que es exactamente lo que la Fase C viene a evitar.
+
+    #[test]
+    fn parcial_que_crecio_pero_esta_quieto_es_semilla() {
+        // Cambió respecto del anterior, pero hace 400 ms que no cambia: la persona hizo una pausa.
+        let e = ent("quiero un nodo", Some("quiero un"), Some(400), false);
+        assert_eq!(clasificar(&e).clase, ClaseParcial::Semilla);
+    }
+
+    #[test]
+    fn parcial_en_movimiento_reciente_es_nada() {
+        // Cambió hace 80 ms: todavía se está transcribiendo. El fantasma no dibuja ruido.
+        let e = ent("quiero un nodo", Some("quiero un"), Some(80), false);
+        assert_eq!(clasificar(&e).clase, ClaseParcial::Nada);
+    }
+
+    #[test]
+    fn sin_dato_de_tiempo_el_criterio_es_conservador() {
+        // Sin `ms_desde_cambio` no hay forma de saber si está quieto: distinto del anterior = en
+        // movimiento, y el fantasma espera.
+        let e = ent("quiero un nodo", Some("quiero un"), None, false);
+        assert_eq!(clasificar(&e).clase, ClaseParcial::Nada);
     }
 }

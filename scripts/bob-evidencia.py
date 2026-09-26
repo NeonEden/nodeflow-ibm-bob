@@ -88,13 +88,19 @@ def main() -> int:
         cuerpo += [f"**{n} tarea(s)** registradas.", ""]
         # `title` puede venir vacío (medido 26/09: las dos tareas lo tienen vacío y sí traen
         # `first_message`): el título con respaldo evita una tabla de guiones.
+        # `costs` es un JSON con el gasto y los tokens de Bob: se extraen los números, no el blob.
         cuerpo += tabla(cur,
                         "select coalesce(nullif(title,''), first_message, id) as t, status, "
-                        "coalesce(nullif(directory,''), '(sin directorio)'), task_type, created_at, updated_at "
+                        "coalesce(nullif(git_branch,''), '(rama sin registrar)'), "
+                        "coalesce(substr(git_sha,1,8), '—'), "
+                        "coalesce(json_extract(costs,'$.cost'), 0), "
+                        "coalesce(json_extract(costs,'$.contextTokens'), 0), "
+                        "created_at, updated_at "
                         "from tasks order by created_at desc",
-                        ["t", "status", "directory", "task_type", "created_at", "updated_at"],
-                        ["Tarea", "Estado", "Directorio", "Tipo", "Creada", "Actualizada"],
-                        como_fecha=frozenset({4, 5}))
+                        ["t", "status", "git_branch", "git_sha", "cost", "contextTokens",
+                         "created_at", "updated_at"],
+                        ["Tarea", "Estado", "Rama", "Commit", "USD", "Tokens ctx", "Creada", "Actualizada"],
+                        como_fecha=frozenset({6, 7}))
     else:
         cuerpo.append("*La tabla `tasks` no existe en esta base.*")
 
