@@ -89,7 +89,7 @@ import { EvaluacionPanel } from './components/EvaluacionPanel';
 import { InvestigacionPanel, type EstadoInvestigacion, type PasoInvestigacion } from './components/InvestigacionPanel';
 import { CerebroPanel } from './components/CerebroPanel';
 import { SiguientePanel } from './components/SiguientePanel';
-import type { PlanVoz } from './services/vozService';
+import type { PlanVoz, DecisionParcial } from './services/vozService';
 import { medirContraste, resumenContraste } from './utils/contraste';
 import { TemplatesModal } from './components/TemplatesModal';
 import { ClearCanvasModal } from './components/ClearCanvasModal';
@@ -247,6 +247,12 @@ export default function App() {
    * en los dos guardados, así que nunca llega al backend ni a la cola de propuestas.
    */
   const [draftVoz, setDraftVoz] = useState('');
+  /**
+   * Decisión del segmentador del backend para el parcial actual. `null` = backend ausente o lento:
+   * el efecto cae a la regla local (`esIdeaEnVivo`). Cuando viene, `semilla` dibuja, `correccion`
+   * dibuja marcando el ghost, y `nada` retira el fantasma.
+   */
+  const [decisionParcial, setDecisionParcial] = useState<DecisionParcial | null | undefined>(undefined);
 
   // 2. Selection & Modal States
   const [selectedNodes, setSelectedNodes] = useState<CustomNode[]>([]);
@@ -605,6 +611,40 @@ export default function App() {
     const timer = setTimeout(() => {
       setNodes((nds) => {
         const sinFantasma = nds.filter((n) => n.id !== ID_FANTASMA);
+
+        // ── Decisión del segmentador (Fase C) ────────────────────────────────────────────────────
+        // Si `decisionParcial` no es `undefined`, el backend contestó: usamos su veredicto.
+        // Si es `undefined` (no hay backend o es la primera vez), caemos a la regla local.
+        //
+        // `null` significa que el backend no contestó a tiempo: misma ruta que `undefined` → local.
+        if (decisionParcial !== undefined) {
+          // Camino del backend.
+          if (decisionParcial === null || decisionParcial.clase === 'nada') {
+            // Backend ausente/lento o parcial descartado: cae a la regla local.
+            if (!esIdeaEnVivo(draftVoz)) {
+              return sinFantasma.length === nds.length ? nds : sinFantasma;
+            }
+            const ancla =
+              nds.find((n) => n.id !== ID_FANTASMA && n.data.isRoot) ?? nds.find((n) => n.id !== ID_FANTASMA);
+            const fantasma = nodoFantasma(draftVoz, ancla) as CustomNode;
+            return [...sinFantasma, fantasma];
+          }
+          // `semilla` o `correccion`: dibujar el fantasma con el texto del backend.
+          const textoParaFantasma = decisionParcial.texto || draftVoz;
+          const ancla =
+            nds.find((n) => n.id !== ID_FANTASMA && n.data.isRoot) ?? nds.find((n) => n.id !== ID_FANTASMA);
+          const fantasma = nodoFantasma(textoParaFantasma, ancla) as CustomNode;
+          if (decisionParcial.clase === 'correccion') {
+            // Marcar el fantasma como corrección para que el estilo lo refleje.
+            (fantasma.data as unknown as Record<string, unknown>).ghostCorreccion = true;
+          }
+          if (decisionParcial.titulo) {
+            fantasma.data.title = decisionParcial.titulo;
+          }
+          return [...sinFantasma, fantasma];
+        }
+
+        // ── Regla local (fallback: sin backend o decisión aún no llegada) ────────────────────────
         if (!esIdeaEnVivo(draftVoz)) {
           // Sin idea todavía no hay nada que dibujar (y si había fantasma, se retira).
           return sinFantasma.length === nds.length ? nds : sinFantasma;
@@ -617,7 +657,7 @@ export default function App() {
       });
     }, 120);
     return () => clearTimeout(timer);
-  }, [draftVoz]);
+  }, [draftVoz, decisionParcial]);
 
   // Autoguardado continuo del lienzo activo (localStorage como caché + vault en disco)
   useEffect(() => {
@@ -4739,7 +4779,15 @@ export default function App() {
         onTurnoConversacion={turnoConversacion}
         // El parcial del turno alimenta el nodo fantasma del lienzo (Fase C); al cerrar, se retira.
         onParcialVivo={setDraftVoz}
-        onTurnoCerrado={() => setDraftVoz('')}
+        // El segmentador del backend refina el veredicto: qué es semilla, corrección o ruido.
+        // null = backend no contestó → el efecto usa la regla local (invariante ADR 0005).
+        onDecisionParcial={(d) => {
+          setDecisionParcial(d);
+        }}
+        onTurnoCerrado={() => {
+          setDraftVoz('');
+          setDecisionParcial(undefined);
+        }}
       />
 
       <LinajeModal

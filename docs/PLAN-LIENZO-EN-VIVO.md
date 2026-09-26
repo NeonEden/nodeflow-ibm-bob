@@ -200,6 +200,28 @@ crea propuestas; sólo clasifica texto); sin estado global que sobreviva al turn
 necesita vencimiento — lección ya pagada dos veces en este proyecto); y la respuesta tiene que llegar en
 menos de ~50 ms, porque está en el camino de la voz.
 
+## 4c · Lo que AssemblyAI ya da en streaming y no estamos usando (verificado en su doc, 26/09)
+
+Bajado de la doc oficial (`/docs/streaming/*`, `/docs/agent-instructions.md`) y del índice completo
+(`llms.txt`, 82 KB). **«Detección de intenciones» no existe como feature**: cero coincidencias de
+`intent` en todo el índice. Lo que existe —y es lo que habilita la visión— es esto:
+
+| Qué | Cómo | Para qué nos sirve | Límite |
+|---|---|---|---|
+| **Contexto del agente** | `agent_context` (query al conectar + `UpdateConfiguration` después de cada respuesta) | El modelo **anticipa el tipo de respuesta y afina el reconocimiento de entidades**; el lado del usuario se arrastra solo | Es **por sesión** (cerrar el WS lo borra) y sólo se arrastran los turnos **finalizados**, no los parciales |
+| **Vocabulario** | `prompt` (dominio, en lenguaje natural) + `keyterms_prompt` (lista explícita) | Que reconozca el vocabulario del proyecto y **del lienzo**: los títulos de los nodos como keyterms es la forma de que el lienzo «enseñe» a la voz | Streaming: **hasta 100 términos, ≤50 caracteres cada uno** |
+| **Control del turno** | `min_turn_silence`, `max_turn_silence` (ms) | Es LA palanca de «pensar en voz alta sin que el agente interrumpa»: subir el mínimo para no cortar en las dudas, bajarlo cuando el usuario da órdenes | Se ajustan **en vivo** con `UpdateConfiguration`, sin reconectar |
+| Análisis (sentimiento, entidades, temas) | Speech Understanding | **No es streaming**: es por lote. La propia doc sugiere el LLM Gateway como sustituto en vivo — que para esta cuenta está bloqueado | Descartado para la demo; no construir sobre eso |
+
+**Pendiente de verificar antes de implementarlo**: la app usa el modelo `u3-rt-pro`; la doc de
+`prompt`/`keyterms_prompt` declara `universal-3-6-pro`, `universal-3-5-pro` y los `universal-streaming-*`.
+Hay que confirmar contra el modelo real de la app (o cambiar de modelo) antes de prometer la mejora.
+
+**Para los agentes que toquen la voz** (lo pide la propia AssemblyAI): su doc se pinnea en las
+instrucciones del proyecto — `https://www.assemblyai.com/docs/agent-instructions.md` (las reglas) y
+`https://www.assemblyai.com/docs/llms.txt` (el índice). Un agente que escribe código de AssemblyAI de
+memoria inventa parámetros; con el pin, no.
+
 ## 5 · Bob: cómo entra y cómo se prueba
 
 Bob 2.0 está instalado (`%LOCALAPPDATA%\Programs\IBM Bob\IBM Bob.exe`, `bobide` 1.126.0+bob2.2.0, con

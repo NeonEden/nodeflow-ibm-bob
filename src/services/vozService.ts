@@ -8,6 +8,87 @@ import type { SesionVoz } from './sttRt';
  * sólo se pide y se muestra: nada se aplica sin que el usuario lo apruebe.
  */
 
+// ── Clasificador de parciales (Fase C, lienzo en vivo) ───────────────────────────────────────────
+
+/** Decisión del segmentador para un parcial del turno de voz. */
+export interface DecisionParcial {
+  clase: 'nada' | 'semilla' | 'correccion';
+  motivo: string;
+  titulo: string | null;
+  texto: string;
+}
+
+/**
+ * Cuánto tiene que quedarse quieto el parcial antes de consultar al segmentador.
+ *
+ * El segmentador del backend exige que el texto no haya cambiado durante su propio umbral
+ * (`MS_ESTABLE` en `segmentador.rs`, 250 ms). Si el cliente consultara apenas llega un parcial
+ * nuevo, `ms_desde_cambio` valdría ~0 y el backend contestaría «nada» **siempre**: su juicio nunca
+ * se activaría y el fantasma dependería sólo de la regla local de `draftVoz`. Por eso el cliente
+ * espera a que el parcial se quede quieto y consulta con el reloj ya cumplido.
+ *
+ * Esta constante tiene que quedar por encima del umbral del segmentador: si bajara, la consulta
+ * llegaría con el reloj corto y el backend volvería a decir «nada» (hay un test que lo ancla).
+ */
+export const MS_ESTABILIDAD_CLIENTE = 300;
+
+/** Tiempo (ms) que el parcial lleva sin cambiar. Nunca negativo (`performance.now()` puede repetir). */
+export function msQuieto(ahora: number, ultimoCambio: number): number {
+  return Math.max(0, Math.round(ahora - ultimoCambio));
+}
+
+/**
+ * Manda el parcial del turno al segmentador del backend (`POST /api/voz/parcial`) y devuelve la
+ * decisión: si hay que dibujar un borrador, si el usuario se corrigió, o si hay que esperar más.
+ *
+ * **Devuelve `null` si el backend no contesta, tarda más de `timeoutMs` (300 ms por defecto) o
+ * responde con un status distinto de 200.** No lanza: quien la llama no tiene que atrapar errores
+ * de red, porque la red es opcional — el lienzo sigue funcionando con la regla local de `draftVoz`.
+ *
+ * Sin reintentos: el próximo parcial va a llegar en ~150 ms, así que ya habrá otra oportunidad.
+ *
+ * Una clase desconocida (el backend devolviera otra string) se normaliza a `'nada'`: el cliente no
+ * se rompe por un contrato que todavía no actualizó.
+ */
+export async function clasificarParcial(
+  p: {
+    turno_id: string;
+    texto: string;
+    anterior?: string;
+    ms_desde_cambio?: number;
+    es_final?: boolean;
+  },
+  opts?: { timeoutMs?: number },
+): Promise<DecisionParcial | null> {
+  const ctrl = new AbortController();
+  const ms = opts?.timeoutMs ?? 300;
+  const timer = window.setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch(apiUrl('/api/voz/parcial'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(p),
+      signal: ctrl.signal,
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    // Clases válidas; cualquier otra se trata como «nada» para que el cliente no se rompa.
+    const claseValida = (c: unknown): c is DecisionParcial['clase'] =>
+      c === 'nada' || c === 'semilla' || c === 'correccion';
+    return {
+      clase: claseValida(d.clase) ? d.clase : 'nada',
+      motivo: typeof d.motivo === 'string' ? d.motivo : '',
+      titulo: typeof d.titulo === 'string' ? d.titulo : null,
+      texto: typeof d.texto === 'string' ? d.texto : '',
+    };
+  } catch {
+    // AbortError (timeout), error de red, o JSON inválido: todo es null para el llamador.
+    return null;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 export interface VozEstado {
   success: boolean;
   configurada: boolean;

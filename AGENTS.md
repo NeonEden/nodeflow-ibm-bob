@@ -34,6 +34,27 @@ está terminado, y no hay excepción por «es un cambio chico».
 > no gastes tus pasos esperando un build de minutos (en un worktree nuevo compila todo desde cero). Editá bien y
 > reportá; el veredicto no es tuyo.
 
+## Si vas a tocar la VOZ: leé la doc viva, no la memoria
+
+La API de AssemblyAI cambia y los parámetros memorizados por un agente suelen estar viejos. Antes de
+escribir código de streaming, leer (o apuntar a un agente a) estos dos, como pide la propia AssemblyAI:
+
+- `https://www.assemblyai.com/docs/agent-instructions.md` — las reglas de la casa del proveedor
+  (modelos recomendados, parámetros que muerden, ejemplos por superficie).
+- `https://www.assemblyai.com/docs/llms.txt` — el índice completo de la doc.
+
+Y lo que ya sabemos de esta integración, para no volver a averiguarlo (medido 26/09/2026):
+
+- Streaming v3 emite `Turn` con parciales y `end_of_turn`; **los parciales crecen palabra por palabra**,
+  así que la estabilidad de una idea se juzga por **tiempo** (`ms_desde_cambio`), no comparando textos.
+- `keyterms_prompt` (hasta 100 términos, ≤50 caracteres) y `prompt` mejoran el reconocimiento; los
+  términos del lienzo son el mejor candidato para llenarlos.
+- `min_turn_silence` / `max_turn_silence` se ajustan **en vivo** con `UpdateConfiguration`: es la palanca
+  para no interrumpir a quien piensa en voz alta.
+- `agent_context` da memoria de la conversación **por sesión** (sólo turnos finalizados).
+- **Speech Understanding** (sentimiento, entidades, temas) es **por lote**, no en vivo: no construir la
+  demo sobre eso.
+
 ## Reglas de la casa (no negociables)
 
 1. **El modelo propone, el código valida** (ADR `0003`). Ningún dato generado por un modelo entra al estado del

@@ -4,7 +4,7 @@ import { type EstadoVoz } from '../services/speechmaticsRt';
 import { crearClienteStt, type ClienteStt } from '../services/sttRt';
 import { apiUrl } from '../services/apiBase';
 import { trazaVoz } from '../services/trazaVoz';
-import { getVozEstado, getVozJwt, pedirPlanVoz, describirComando, decir, hablarConElSistema, VozEstado, PlanVoz, VozComando } from '../services/vozService';
+import { getVozEstado, getVozJwt, pedirPlanVoz, describirComando, decir, hablarConElSistema, clasificarParcial, msQuieto, MS_ESTABILIDAD_CLIENTE, VozEstado, PlanVoz, VozComando } from '../services/vozService';
 import { useIdioma } from '../i18n/useIdioma';
 import { esAfirmativo, planEsConsulta } from '../utils/voz';
 
@@ -50,6 +50,12 @@ interface VozPanelProps {
    * crece, así que el consumidor tiene que ser barato.
    */
   onParcialVivo?: (texto: string) => void;
+  /**
+   * Decisión del segmentador del backend para el parcial actual. Se llama con `null` cuando el
+   * backend no contesta o tarda, para que App pueda caer a la regla local. Si llega, App usa esta
+   * decisión en lugar de `esIdeaEnVivo` para dibujar el fantasma (Fase C).
+   */
+  onDecisionParcial?: (d: import('../services/vozService').DecisionParcial | null) => void;
   /** El turno se cerró: el borrador vivo deja de tener sentido y se retira del lienzo. */
   onTurnoCerrado?: () => void;
 }
@@ -88,7 +94,7 @@ const EJEMPLOS = [
  * Panel de Voz (Speechmatics). Hablás, la transcripción aparece en vivo y al cortar el motor
  * propone un PLAN de operaciones sobre el lienzo — que se aprueba antes de aplicarse.
  */
-export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, onPrevisualizar, onAplicarComandos, tituloNodo, preguntaAbierta, onResponder, onInicioConversacion, onTurnoConversacion, pedidoExterno, onParcialVivo, onTurnoCerrado }) => {
+export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, onPrevisualizar, onAplicarComandos, tituloNodo, preguntaAbierta, onResponder, onInicioConversacion, onTurnoConversacion, pedidoExterno, onParcialVivo, onDecisionParcial, onTurnoCerrado }) => {
   // Textos del panel en el idioma activo. La voz (entrada y salida) sigue el mismo idioma desde el
   // backend, así que acá sólo se traduce la interfaz.
   const { t } = useIdioma();
@@ -198,6 +204,33 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
   const sesionInicioRef = useRef(0);
   const turnosServidosRef = useRef(0);
   const turnoRef = useRef(0);
+  /**
+   * Texto del parcial ANTERIOR del mismo turno: el segmentador lo necesita para detectar
+   * estabilidad (si el texto no cambió, el parcial lleva un rato estable y puede dibujarse).
+   */
+  const anteriorRef = useRef('');
+  /**
+   * Instante (performance.now) en que el texto del parcial cambió por última vez. Con esto se
+   * calcula `ms_desde_cambio` que el segmentador usa para descartar parciales que todavía están
+   * creciendo aunque el texto momentáneamente coincida con el anterior.
+   */
+  const ultimoCambioRef = useRef(0);
+  /**
+   * Timestamp del último fetch a `/api/voz/parcial` que se disparó. Se usa para el throttle
+   * (~150 ms) y para descartar respuestas de vuelos viejos (ver «una sola llamada en vuelo»).
+   */
+  const ultimaLlamadaRef = useRef(0);
+  /**
+   * Texto que se mandó en el último fetch en vuelo. Si cuando llega la respuesta el texto actual
+   * es distinto, la respuesta es stale y se descarta: evita que el fantasma muestre una frase ya
+   * corregida.
+   */
+  const textoEnVueloRef = useRef('');
+  /**
+   * Timer de quietud: la consulta al segmentador NO sale al recibir un parcial, sale cuando el
+   * parcial se quedó quieto (ver `MS_ESTABILIDAD_CLIENTE`). Se reprograma con cada cambio.
+   */
+  const evalTimerRef = useRef<number | null>(null);
   const t0PedidoRef = useRef(0);
   const t0ListoRef = useRef(0);
   const primerParcialRef = useRef(false);
@@ -522,6 +555,38 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
       sesionRef.current = nuevoIdSesion();
       sesionInicioRef.current = performance.now();
       turnosServidosRef.current = 0;
+      // Resetear el estado del segmentador al inicio de cada sesión: el turno nuevo empieza limpio.
+      anteriorRef.current = '';
+      ultimoCambioRef.current = performance.now();
+      ultimaLlamadaRef.current = 0;
+      textoEnVueloRef.current = '';
+      if (evalTimerRef.current !== null) {
+        window.clearTimeout(evalTimerRef.current);
+        evalTimerRef.current = null;
+      }
+      /**
+       * Consulta al segmentador con el parcial ya estabilizado y entrega la decisión al dueño del
+       * estado. Se llama desde el timer de quietud y desde el cierre del turno (`es_final`), que no
+       * espera: ahí el juicio es definitivo y el segmentador no aplica su filtro de tiempo.
+       */
+      const consultarSegmentador = (texto: string, previo: string, ahora: number, esFinal = false) => {
+        // Throttle: el parcial puede llegar muchas veces por segundo (máximo una llamada cada ~150 ms).
+        if (!esFinal && ahora - ultimaLlamadaRef.current < 150) return;
+        ultimaLlamadaRef.current = ahora;
+        textoEnVueloRef.current = texto;
+        void clasificarParcial({
+          turno_id: sesionRef.current,
+          texto,
+          anterior: previo || undefined,
+          ms_desde_cambio: msQuieto(ahora, ultimoCambioRef.current),
+          es_final: esFinal,
+        }).then((decision) => {
+          // Respuesta stale: si el texto ya cambió, esta decisión habla de una frase vieja.
+          if (!esFinal && textoEnVueloRef.current !== texto) return;
+          onDecisionParcial?.(decision);
+        });
+      };
+
       const rt = crearClienteStt(sesion, {
         onEstado: (e, d) => {
           setEstado(e);
@@ -548,10 +613,39 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
           // y que no suenen a la propia voz: con parlantes la app se oiría a sí misma y se cortaría sola.
           const partes = t.trim().split(/\s+/).filter(Boolean);
           if (hablandoRef.current && partes.length >= 3 && !pareceMia(t)) interrumpirVoz();
+          // Segmentador del backend (Fase C): el juicio real del parcial.
+          //
+          // Se consulta cuando el parcial se QUEDA QUIETO, no apenas llega: si se consultara al
+          // llegar, `ms_desde_cambio` valdría ~0 y el segmentador (que exige que el texto no haya
+          // cambiado durante su umbral) contestaría «nada» siempre — su juicio nunca se activaría.
+          if (onDecisionParcial) {
+            const previo = anteriorRef.current;
+            if (t !== previo) {
+              const ahora = performance.now();
+              anteriorRef.current = t;
+              ultimoCambioRef.current = ahora;
+              if (evalTimerRef.current !== null) window.clearTimeout(evalTimerRef.current);
+              evalTimerRef.current = window.setTimeout(() => {
+                evalTimerRef.current = null;
+                consultarSegmentador(t, previo, performance.now());
+              }, MS_ESTABILIDAD_CLIENTE);
+            }
+          }
         },
         onFinal: (t) => {
           fragRef.current = t;
           setTexto(t);
+          // Cierre del turno: el juicio final no espera a la quietud (con `es_final` el segmentador
+          // no aplica su filtro de tiempo). Esto es lo que dibuja la idea cuando el usuario para.
+          if (onDecisionParcial) {
+            if (evalTimerRef.current !== null) {
+              window.clearTimeout(evalTimerRef.current);
+              evalTimerRef.current = null;
+            }
+            const previo = anteriorRef.current;
+            anteriorRef.current = t;
+            consultarSegmentador(t, previo, performance.now(), true);
+          }
         },
         onError: (m) => {
           trazaVoz('error', { fase: 'motor', mensaje: m });
@@ -589,6 +683,10 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
   };
 
   const cortar = async () => {
+    if (evalTimerRef.current !== null) {
+      window.clearTimeout(evalTimerRef.current);
+      evalTimerRef.current = null;
+    }
     const rt = rtRef.current;
     if (!rt) {
       // Todavía no hay cliente: `empezar()` está abriendo la sesión (pide el token por HTTP) y el atajo ya
