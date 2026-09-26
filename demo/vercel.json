@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo sin-install",
+  "buildCommand": "echo sin-build",
+  "outputDirectory": "public",
+  "rewrites": [{ "source": "/api/:camino*", "destination": "/api/index?camino=:camino*" }],
+  "functions": { "api/index.mjs": { "maxDuration": 30 } }
+}

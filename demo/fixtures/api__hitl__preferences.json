@@ -1,0 +1,27 @@
+{
+ "profile": {
+  "acceptanceRate": 78,
+  "autoAprendizaje": {
+   "activo": false,
+   "cada": 10,
+   "decisionesEnLaUltima": 0,
+   "ultimaMs": 0
+  },
+  "categoriesAccepted": [
+   "ARQUITECTURA",
+   "SISTEMAS",
+   "DATOS"
+  ],
+  "categoriesRejected": [
+   "GENERAL"
+  ],
+  "decisions": 0,
+  "learnedProfile": "Perfil de demostración: el sistema aprende de las decisiones del usuario y ajusta el ruteo. En el demo web este perfil es de ejemplo (no hay aprendizaje real acumulado).",
+  "prefers": [
+   "conceptos técnicos",
+   "estructuras verificables"
+  ],
+  "rejects": []
+ },
+ "fuente": "demo"
+}

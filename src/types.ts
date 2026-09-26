@@ -1,0 +1,239 @@
+import { Node, Edge } from 'reactflow';
+
+export type IdeaMaturityLevel = 1 | 2 | 3 | 4 | 5;
+
+export interface MaturityConfig {
+  level: IdeaMaturityLevel;
+  label: string;
+  icon: string;
+  desc: string;
+  /** La forma que le da el estado epistémico al nodo (taxonomía geométrica del usuario).
+   *  `clip` recorta el contenedor; `radius` redondea; `dashed` marca lo todavía maleable. */
+  forma?: { clip?: string; radius?: string; dashed?: boolean };
+  textColor: string;
+  barBg: string;
+  borderColor: string;
+  badgeBg: string;
+}
+
+export const MATURITY_CONFIGS: Record<IdeaMaturityLevel, MaturityConfig> = {
+  1: {
+    level: 1,
+    label: 'Semilla',
+    icon: '🌱',
+    desc: 'Chispa inicial / hipótesis sin validar',
+    forma: { radius: '20px', dashed: true },
+    textColor: 'text-slate-300',
+    barBg: 'bg-slate-400',
+    borderColor: 'border-slate-700',
+    badgeBg: 'bg-slate-800/80',
+  },
+  2: {
+    level: 2,
+    label: 'Fricción',
+    icon: '⚔️',
+    desc: 'En debate: pregunta activa o contradicción sin resolver',
+    forma: { clip: 'polygon(7% 0, 93% 0, 100% 12%, 100% 88%, 93% 100%, 7% 100%, 0 88%, 0 12%)' },
+    textColor: 'text-amber-300',
+    barBg: 'bg-amber-400',
+    borderColor: 'border-amber-700/60',
+    badgeBg: 'bg-amber-950/60',
+  },
+  3: {
+    level: 3,
+    label: 'Probada',
+    icon: '🧪',
+    desc: 'En síntesis: auditada críticamente, resistente y sólida',
+    forma: { radius: '28px' },
+    textColor: 'text-cyan-300',
+    barBg: 'bg-cyan-400',
+    borderColor: 'border-cyan-700/60',
+    badgeBg: 'bg-cyan-950/60',
+  },
+  4: {
+    level: 4,
+    label: 'Axioma',
+    icon: '💎',
+    desc: 'Verdad verificada: fundamento inamovible del sistema',
+    forma: { radius: '3px' },
+    textColor: 'text-emerald-300',
+    barBg: 'bg-emerald-400',
+    borderColor: 'border-emerald-700/60',
+    badgeBg: 'bg-emerald-950/60',
+  },
+  5: {
+    level: 5,
+    label: 'Artefacto',
+    icon: '🚀',
+    desc: 'Cristalizado: salida ejecutable (nota, código, prompt)',
+    textColor: 'text-violet-300',
+    barBg: 'bg-violet-400',
+    borderColor: 'border-violet-700/60',
+    badgeBg: 'bg-violet-950/60',
+    forma: { clip: 'polygon(9% 0, 91% 0, 100% 50%, 91% 100%, 9% 100%, 0 50%)' },
+  },
+};
+
+export interface IdeaNodeData {
+  id: string;
+  title: string;
+  description: string;
+  category?: string;
+  label?: string;
+  tags?: string[];
+  colorAccent?: string;
+  isRoot?: boolean;
+  isSearchMatch?: boolean;
+  isEditing?: boolean;
+  maturity?: IdeaMaturityLevel;
+  /** Grado del nodo (aristas que lo tocan). Se inyecta en el render: alimenta la
+   *  jerarquía de escala. No forma parte del estado persistido. */
+  degree?: number;
+  /** true si la lente de categoría lo está marcando como miembro. Sólo render. */
+  lente?: boolean;
+  /** Nodo fantasma del turno de voz: se dibuja mientras se habla y NO se persiste (plan Fase C). */
+  ghost?: boolean;
+  /** Macro-nodo condensado: guarda el LINaje (poda sin pérdida). */
+  /** Pregunta catalizadora (socratic): se abre, se responde y se cierra. */
+  pregunta?: {
+    estado: 'abierta' | 'respondida';
+    respuestaId?: string;
+    respondidaEn?: string;
+  };
+  /** El nodo es la respuesta a una pregunta: guarda de quién responde. */
+  respuestaDe?: string;
+  /** Decisión humana explícita: aceptar o descartar (descartar NO borra). */
+  decision?: {
+    estado: 'aceptada' | 'descartada';
+    fecha: string;
+    motivo?: string;
+  };
+  /** Por qué cambió de fase: la evidencia que la madurez no guardaba. */
+  evidencia?: { texto: string; fecha: string; nivel: number };
+  /** Cuándo se movió de fase por última vez (lo usa la métrica de valor). */
+  madurezEn?: string;
+  macro?: {
+    colapsados: number;
+    linaje: string[];
+    resumen?: string;
+    principio?: string;
+    match?: number;
+    objetivo?: string;
+    creadoEn?: string;
+    /** Los nodos y aristas originales, tal cual estaban: permiten restaurar el sub-grafo. */
+    datos?: { nodes: unknown[]; edges: unknown[] };
+  };
+  aiOrigin?: {
+    batchId: string;
+    actionType: 'branch' | 'explore' | 'hybrid' | 'critique' | 'socratic' | 'braindump' | 'bridge' | 'manual' | 'condensar';
+    promptOriginal: string;
+    originalTitle: string;
+    allBatchTitles: string[];
+    createdAt: string;
+  };
+  onAction?: (
+    action:
+      | 'branch'
+      | 'explore'
+      | 'critique'
+      | 'socratic'
+      | 'edit'
+      | 'delete'
+      | 'duplicate'
+      | 'inline-save'
+      | 'inline-save-tab'
+      | 'inline-save-enter'
+      | 'inline-cancel'
+      | 'inline-start'
+      | 'responder'
+      | 'decidir-aceptar'
+      | 'decidir-descartar'
+      | 'decidir-limpiar'
+      | 'set-maturity',
+    nodeIdOrData: string | IdeaNodeData,
+    extraData?: IdeaNodeData
+  ) => void;
+}
+
+export interface SemanticBridge {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  sourceTitle: string;
+  targetTitle: string;
+  label: string;
+  rationale: string;
+}
+
+export interface HumanDecision {
+  accepted: string[];
+  rejected: string[];
+  added_manually: string[];
+}
+
+export interface FeedbackEvent {
+  id: string;
+  timestamp: string;
+  action: 'NODE_EDIT' | 'NODE_DELETE' | 'EDGE_CREATED' | 'AI_ACCEPTED' | 'HYBRIDIZE_FEEDBACK' | 'CONDENSE_FEEDBACK';
+  prompt_original: string;
+  ai_suggestion: string[];
+  human_decision: HumanDecision;
+  contextSnippet?: string;
+  inferredPreference?: string;
+}
+
+/** Aprendizaje automático: cada cuántas decisiones la app corrige tu perfil sola. */
+export interface HitlAutoAprendizaje {
+  activo: boolean;
+  cada: number;
+  decisionesEnLaUltima?: number;
+  ultimaMs?: number | null;
+}
+
+export interface UserHitlProfile {
+  version: string;
+  updatedAt: string;
+  totalDecisions: number;
+  acceptanceRate: number;
+  learnedProfile: string;
+  categoriesAccepted: string[];
+  topicsRejected: string[];
+  recentFeedback: FeedbackEvent[];
+  autoAprendizaje?: HitlAutoAprendizaje;
+}
+
+export type CustomNode = Node<IdeaNodeData>;
+
+export type ConnectionCurve = 'default' | 'straight' | 'smoothstep' | 'step';
+
+export interface EdgeAppearance {
+  color: string;
+  strokeWidth: number;
+  animated: boolean;
+  type: ConnectionCurve;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar: string;
+}
+
+export interface SavedState {
+  id: string;
+  name: string;
+  timestamp: number;
+  userId: string;
+  nodeCount: number;
+  edgeCount: number;
+  nodes: CustomNode[];
+  edges: Edge[];
+  edgeAppearance: EdgeAppearance;
+}
+
+export interface HistorySnapshot {
+  nodes: CustomNode[];
+  edges: Edge[];
+}

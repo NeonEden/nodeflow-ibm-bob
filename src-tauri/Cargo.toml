@@ -1,0 +1,58 @@
+[package]
+name = "app"
+version = "0.1.0"
+description = "NodeFlow — lienzo local-first de pensamiento aumentado"
+authors = ["Tomas"]
+license = ""
+repository = ""
+edition = "2021"
+rust-version = "1.77.2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# El ejecutable lleva el nombre del programa, no el del paquete: el instalador NSIS nombra el
+# binario instalado con el nombre del target (quedaba «app.exe» en la carpeta, en el Administrador
+# de tareas y en el acceso directo). El paquete sigue siendo `app` porque `app_lib` es el nombre que
+# importa `main.rs`.
+[[bin]]
+name = "NodeFlow"
+path = "src/main.rs"
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.11.3", features = [] }
+tauri-plugin-log = "2"
+tauri-plugin-single-instance = "2"
+axum = "0.8"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
+tower-http = { version = "0.7", features = ["cors"] }
+# `stream` habilita `bytes_stream()`: la voz local se baja de a chunks con progreso, en vez de
+# sostener 390 MB en memoria.
+reqwest = { version = "0.12", features = ["json", "stream"] }
+notify = "8"
+tauri-plugin-updater = "2.11.0"
+tauri-plugin-process = "2.3.1"
+# El almacén de Windows tiene que estar EXPLÍCITO: con las features por defecto el crate compila sin
+# ningún almacén de plataforma, escribe "con éxito" sin persistir nada y devuelve vacío al leer.
+# Así se perdieron 4 claves en la migración del 15/09 — el test `el_llavero_real_persiste_de_verdad`
+# es el candado que impide que vuelva a pasar.
+keyring = { version = "3.6.3", default-features = false, features = ["windows-native"] }
+# Para la voz local descargable: hash del paquete y descarga con progreso. Las tres ya venían en el
+# árbol de dependencias (reqwest/tokio), así que declararlas no agrega descargas.
+sha2 = "0.10"
+hex = "0.4"
+futures-util = "0.3"
+
+# Dictado desde cualquier lado (push-to-talk): el atajo global saca la última fricción del flujo de voz
+# —"abrir la app para hablar"—. Sólo en escritorio: en móvil esta API no existe.
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-global-shortcut = "2"

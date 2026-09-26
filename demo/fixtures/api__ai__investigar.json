@@ -1,0 +1,30 @@
+{
+ "corriendo": false,
+ "fases": [
+  {
+   "emoji": "🌱",
+   "id": "semilla",
+   "titulo": "Semilla"
+  },
+  {
+   "emoji": "⚔️",
+   "id": "friccion",
+   "titulo": "Fricción"
+  },
+  {
+   "emoji": "🧪",
+   "id": "capsula",
+   "titulo": "Cápsula"
+  },
+  {
+   "emoji": "🚀",
+   "id": "hexagono",
+   "titulo": "Hexágono"
+  }
+ ],
+ "investigacion": {
+  "fase": null,
+  "ok": false,
+  "pasos": []
+ }
+}

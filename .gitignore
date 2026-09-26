@@ -118,3 +118,23 @@ build/
 # DO NOT REMOVE ABOVE PATTERNS
 # Add project-specific patterns below
 # ============================================
+
+# --- NodeFlow (migrado 26/09/2026) -------------------------------------------
+# Artefactos de build: no se versionan nunca.
+src-tauri/target/
+src-tauri/gen/
+dist/
+.vite/
+node_modules/
+
+# Backups y temporales que deja el trabajo por fases.
+*.bak
+*.old
+*.tmp
+*.previo
+
+# Notas locales del cerebro residente (viven en la bóveda del usuario, no en el repo).
+cerebro/
+
+# El bundle de la demo se construye en local y se versiona a propósito (demo/public).
+!demo/public/

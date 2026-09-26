@@ -1,0 +1,34 @@
+{
+ "arquitectura": {
+  "chars": 10014,
+  "existe": true,
+  "sello": "2026-09-16T14:32"
+ },
+ "bitacora": {
+  "existe": true,
+  "chars": 420,
+  "texto": "---\ntitulo: \"Bitácora (demo)\"\ntipo: nota\ngenerado_por: demo\n---\n\n# Bitácora (demo)\n\nEn la app real esta nota la escribe el agente residente: cada turno deja una\nentrada con fecha y autor, y el humano puede dejarle la suya. En el demo web el contenido es de\nejemplo para no publicar las decisiones internas del proyecto.\n",
+  "actualizado": "2026-09-01T00:00"
+ },
+ "carpeta": "<bóveda>",
+ "planes": [
+  {
+   "chars": 6083,
+   "modificado_ms": 1789590902315,
+   "nombre": "plan-de-ejemplo",
+   "texto": "---\ntitulo: \"Plan de ejemplo\"\ntipo: nota\n---\n\n# Plan de ejemplo\n\nEl cerebro mantiene sus planes como notas de la bóveda. Acá se muestra la forma: estado,\nfecha y cuerpo en markdown. El texto real es privado del autor.\n",
+   "titulo": "Plan de ejemplo",
+   "estado": "vigente"
+  },
+  {
+   "chars": 1421,
+   "modificado_ms": 1789567970712,
+   "nombre": "plan-de-ejemplo-2",
+   "texto": "---\ntitulo: \"Plan de ejemplo\"\ntipo: nota\n---\n\n# Plan de ejemplo\n\nEl cerebro mantiene sus planes como notas de la bóveda. Acá se muestra la forma: estado,\nfecha y cuerpo en markdown. El texto real es privado del autor.\n",
+   "titulo": "Segundo plan de ejemplo",
+   "estado": "vigente"
+  }
+ ],
+ "success": true,
+ "turnos": 9
+}

@@ -1,0 +1,806 @@
+{
+  "branch": {
+    "aliases": [],
+    "prompt": "Analiza este nodo: \"{{title}}: {{description}}\".\r\nGenera 3 sub-ideas o componentes técnicamente viables que expandan y complementen este concepto.\r\n{{memoria}}\nResponde exclusivamente en este formato JSON:\r\n[\r\n  {\"category\": \"CATEGORIA\", \"title\": \"Titulo Corto\", \"description\": \"Explicacion concisa\", \"tags\": [\"tag1\", \"tag2\"]}\r\n]",
+    "schema": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "category": {
+            "type": "STRING"
+          },
+          "title": {
+            "type": "STRING"
+          },
+          "description": {
+            "type": "STRING"
+          },
+          "tags": {
+            "type": "ARRAY",
+            "items": {
+              "type": "STRING"
+            }
+          }
+        },
+        "required": [
+          "category",
+          "title",
+          "description",
+          "tags"
+        ]
+      }
+    },
+    "schema_alt": null,
+    "prompt_alt": null,
+    "schemas_all": [
+      "branchSchema"
+    ],
+    "fallbacks": {
+      "fallbackVariations": [
+        {
+          "category": "EVOLUCIÓN",
+          "title": "Evolución Autónoma de {{title}}",
+          "description": "Integración con automatización, flujos en tiempo real y APIs modernas para {{title.toLowerCase()}}.",
+          "tags": [
+            "Digital",
+            "Autónomo"
+          ]
+        },
+        {
+          "category": "EFICIENCIA",
+          "title": "Enfoque Minimalista y Ágil",
+          "description": "Versión simplificada que reduce la complejidad operativa y prioriza la máxima velocidad de ejecución.",
+          "tags": [
+            "Eficiencia",
+            "Lean"
+          ]
+        },
+        {
+          "category": "COMUNIDAD",
+          "title": "Capa Colaborativa & Red",
+          "description": "Plataforma comunitaria de co-creación con incentivos y sincronización distribuida.",
+          "tags": [
+            "Comunidad",
+            "Sinergia"
+          ]
+        }
+      ]
+    },
+    "body_fields": [],
+    "inner_conditions": [
+      "type === \"branch\""
+    ],
+    "response": {
+      "key": "variations"
+    }
+  },
+  "explore": {
+    "aliases": [],
+    "prompt": "Analiza a fondo el concepto: \"{{title}}: {{description}}\".\r\nProporciona 3 ángulos de exploración analítica profunda:\r\n1. Factibilidad Técnica e Infraestructura\r\n2. Experiencia de Usuario y Adopción\r\n3. Factores Críticos y Seguridad\r\n{{memoria}}\nDevuelve un JSON array con objetos que tengan: category, title, description, tags (array de 2 tags).",
+    "schema": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "category": {
+            "type": "STRING"
+          },
+          "title": {
+            "type": "STRING"
+          },
+          "description": {
+            "type": "STRING"
+          },
+          "tags": {
+            "type": "ARRAY",
+            "items": {
+              "type": "STRING"
+            }
+          }
+        },
+        "required": [
+          "category",
+          "title",
+          "description",
+          "tags"
+        ]
+      }
+    },
+    "schema_alt": null,
+    "prompt_alt": null,
+    "schemas_all": [
+      "exploreSchema"
+    ],
+    "fallbacks": {
+      "fallbackExploration": [
+        {
+          "category": "ARQUITECTURA",
+          "title": "Factibilidad y Arquitectura",
+          "description": "Evaluar requerimientos de infraestructura escalable y tiempos de respuesta para {{title}}.",
+          "tags": [
+            "Técnico",
+            "Escala"
+          ]
+        },
+        {
+          "category": "EXPERIENCIA",
+          "title": "Adopción y Experiencia de Usuario",
+          "description": "Diseñar flujos intuitivos y reducir la fricción para la interacción con {{title}}.",
+          "tags": [
+            "UX",
+            "Adopción"
+          ]
+        },
+        {
+          "category": "ESTRATEGIA",
+          "title": "Estrategia de Crecimiento",
+          "description": "Medir métricas clave de retención y casos de uso de alto impacto para la propuesta.",
+          "tags": [
+            "Estrategia",
+            "Impacto"
+          ]
+        }
+      ]
+    },
+    "body_fields": [],
+    "inner_conditions": [
+      "type === \"explore\""
+    ],
+    "response": {
+      "key": "variations"
+    }
+  },
+  "hybrid": {
+    "aliases": [],
+    "prompt": "Actúa como un sintetizador conceptual de vanguardia.\r\nFusiona creativamente estas dos ideas en una única propuesta híbrida innovadora:\r\nIdea 1: \"{{nodeA.title}}: {{nodeA.description}}\"\r\nIdea 2: \"{{nodeB.title}}: {{nodeB.description}}\"\r\n\r\nGenera una síntesis innovadora con:\r\n- \"title\": Nombre atractivo del concepto híbrido (máx. 5 palabras)\r\n- \"description\": Explicación clara de cómo se combinan ambas fortalezas (2 oraciones)\r\n- \"tags\": Lista de 2 o 3 etiquetas\r\n- \"rationale\": Breve justificación de la sinergia\n{{memoria}}",
+    "schema": {
+      "type": "OBJECT",
+      "properties": {
+        "title": {
+          "type": "STRING"
+        },
+        "description": {
+          "type": "STRING"
+        },
+        "tags": {
+          "type": "ARRAY",
+          "items": {
+            "type": "STRING"
+          }
+        },
+        "rationale": {
+          "type": "STRING"
+        }
+      },
+      "required": [
+        "title",
+        "description",
+        "tags"
+      ]
+    },
+    "schema_alt": null,
+    "prompt_alt": null,
+    "schemas_all": [
+      "hybridSchema"
+    ],
+    "fallbacks": {},
+    "body_fields": [],
+    "inner_conditions": [
+      "type === \"hybrid\"",
+      "result && result.parsed?.title"
+    ],
+    "response": {
+      "key": "hybrid"
+    }
+  },
+  "synthesize": {
+    "aliases": [],
+    "prompt": "Analiza la siguiente red de nodos y mapa mental conceptual:\r\n{{nodeSummaries}}\r\n\r\nGenera una síntesis ejecutiva integral del mapa mental en formato JSON:\r\n- \"summary\": Un párrafo conciso (3-4 oraciones) resumiendo la visión global del mapa.\r\n- \"pillars\": Un array de 3 pilares clave identificados en la red de ideas.\r\n- \"actionItems\": Un array de 3 a 5 próximos pasos recomendados para ejecutar este mapa.\r\n- \"keyOpportunities\": 2 oportunidades de diferenciación o innovación identificadas.\n{{memoria}}",
+    "schema": {
+      "type": "OBJECT",
+      "properties": {
+        "summary": {
+          "type": "STRING"
+        },
+        "pillars": {
+          "type": "ARRAY",
+          "items": {
+            "type": "STRING"
+          }
+        },
+        "actionItems": {
+          "type": "ARRAY",
+          "items": {
+            "type": "STRING"
+          }
+        },
+        "keyOpportunities": {
+          "type": "ARRAY",
+          "items": {
+            "type": "STRING"
+          }
+        }
+      },
+      "required": [
+        "summary",
+        "pillars",
+        "actionItems",
+        "keyOpportunities"
+      ]
+    },
+    "schema_alt": null,
+    "prompt_alt": null,
+    "schemas_all": [
+      "synthesizeSchema"
+    ],
+    "fallbacks": {
+      "fallbackSynthesis": {
+        "summary": "El mapa actual articula {{allNodes.length}} nodos interconectados con foco en innovación estratégica, desarrollo ágil y escalabilidad. Presenta un equilibrio entre fundamentos conceptuales y componentes de ejecución práctica.",
+        "pillars": [
+          "Arquitectura y Fundamentos de Conocimiento",
+          "Diferenciación y Adopción por Usuarios",
+          "Escalabilidad y Ejecución Continua"
+        ],
+        "actionItems": [
+          "Priorizar el desarrollo de los nodos raíz de mayor impacto",
+          "Validar las hipótesis planteadas en las ramificaciones con usuarios de prueba",
+          "Estructurar hitos trimestrales basados en los componentes explorados"
+        ],
+        "keyOpportunities": [
+          "Integración de automatización cognitiva en los procesos clave",
+          "Consolidación de una propuesta de valor unificada frente a alternativas existentes"
+        ]
+      }
+    },
+    "body_fields": [],
+    "inner_conditions": [
+      "type === \"synthesize\"",
+      "allNodes.length > 0",
+      "result && result.parsed?.summary"
+    ],
+    "response": {
+      "key": "synthesis"
+    }
+  },
+  "critique": {
+    "aliases": [
+      "devils_advocate"
+    ],
+    "prompt": "Actúa como un riguroso 'Abogado del Diablo', auditor crítico y analista de riesgos.\r\nExamina objetivamente el concepto: \"{{title}}: {{description}}\".\r\nDetecta 3 puntos ciegos, contraargumentos, riesgos operativos o suposiciones no validadas que desafíen esta idea para hacerla más robusta.\r\n{{memoria}}\nDevuelve un JSON array con objetos: category (\"PUNTO CIEGO\" | \"RIESGO CRÍTICO\" | \"ANTÍTESIS\"), title (máx 5 palabras), description (explicación concisa del riesgo o contraargumento), tags (array de 2 tags).",
+    "schema": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "category": {
+            "type": "STRING"
+          },
+          "title": {
+            "type": "STRING"
+          },
+          "description": {
+            "type": "STRING"
+          },
+          "tags": {
+            "type": "ARRAY",
+            "items": {
+              "type": "STRING"
+            }
+          }
+        },
+        "required": [
+          "category",
+          "title",
+          "description",
+          "tags"
+        ]
+      }
+    },
+    "schema_alt": null,
+    "prompt_alt": null,
+    "schemas_all": [
+      "critiqueSchema"
+    ],
+    "fallbacks": {
+      "fallbackCritique": [
+        {
+          "category": "PUNTO CIEGO",
+          "title": "Suposición Crítica No Validada",
+          "description": "Se asume una adopción inmediata sin fricción operativa o resistencia al cambio en {{title}}.",
+          "tags": [
+            "Adopción",
+            "Sesgo"
+          ]
+        },
+        {
+          "category": "RIESGO CRÍTICO",
+          "title": "Cuello de Botella Operativo",
+          "description": "La complejidad de mantenimiento o escalado técnico puede superar los beneficios tempranos de la solución.",
+          "tags": [
+            "Escalabilidad",
+            "Costos"
+          ]
+        },
+        {
+          "category": "ANTÍTESIS",
+          "title": "Alternativa Simplificada Existente",
+          "description": "Herramientas consolidadas o métodos manuales podrían resolver el 80% del problema con menor fricción.",
+          "tags": [
+            "Competencia",
+            "Fricción"
+          ]
+        }
+      ]
+    },
+    "body_fields": [],
+    "inner_conditions": [
+      "type === \"critique\" || type === \"devils_advocate\""
+    ],
+    "response": {
+      "key": "variations"
+    }
+  },
+  "socratic": {
+    "aliases": [],
+    "prompt": "Actúa como un mentor socrático de pensamiento profundo e inquisitivo.\r\nExamina el concepto: \"{{title}}: {{description}}\".\r\nFormula 3 preguntas catalizadoras directas, profundas e incisivas (no complacientes) para forzar al pensador a clarificar y destrabar la esencia de la idea.\r\n{{memoria}}\nDevuelve un JSON array con objetos: category (\"PREGUNTA CATALIZADORA\" | \"DESAFÍO COGNITIVO\"), title (la pregunta en formato ¿...?, máx 7 palabras), description (por qué esta pregunta es crucial resolverla), tags (array de 2 tags).",
+    "schema": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "category": {
+            "type": "STRING"
+          },
+          "title": {
+            "type": "STRING"
+          },
+          "description": {
+            "type": "STRING"
+          },
+          "tags": {
+            "type": "ARRAY",
+            "items": {
+              "type": "STRING"
+            }
+          }
+        },
+        "required": [
+          "category",
+          "title",
+          "description",
+          "tags"
+        ]
+      }
+    },
+    "schema_alt": null,
+    "prompt_alt": null,
+    "schemas_all": [
+      "socraticSchema"
+    ],
+    "fallbacks": {
+      "fallbackSocratic": [
+        {
+          "category": "PREGUNTA CATALIZADORA",
+          "title": "¿Qué falla si esto tiene éxito?",
+          "description": "Evaluar consecuencias de segundo orden causadas por un incremento drástico en demanda o uso.",
+          "tags": [
+            "Segundo Orden",
+            "Estrategia"
+          ]
+        },
+        {
+          "category": "DESAFÍO COGNITIVO",
+          "title": "¿Cuál es el núcleo irreductible?",
+          "description": "Si tuvieras que eliminar el 80% de las partes accesorias, ¿qué componente seguiría aportando valor real?",
+          "tags": [
+            "Esencia",
+            "Minimalismo"
+          ]
+        },
+        {
+          "category": "PREGUNTA CATALIZADORA",
+          "title": "¿Para quién NO es esta solución?",
+          "description": "Definir los límites precisos de exclusión clarifica el foco y previene la dispersión del alcance.",
+          "tags": [
+            "Foco",
+            "Audiencia"
+          ]
+        }
+      ]
+    },
+    "body_fields": [],
+    "inner_conditions": [
+      "type === \"socratic\""
+    ],
+    "response": {
+      "key": "variations"
+    }
+  },
+  "find_bridges": {
+    "aliases": [],
+    "prompt": "Analiza estos nodos en un mapa mental conceptual:\r\n{{JSON.stringify(nodeSummaries, null, 2)}}\r\n\r\nConexiones ya existentes:\r\n{{Array.from(existingConnections).slice(0, 30).join(\", \")}}\r\n\r\nEncuentra de 2 a 3 conexiones ocultas, no obvias y de alto valor conceptual (Semantic Bridges) entre pares de nodos que NO estén ya conectados directamente.\r\nPara cada puente, proporciona:\r\n- sourceId: id exacto del nodo origen\r\n- targetId: id exacto del nodo destino\r\n- sourceTitle: título del nodo origen\r\n- targetTitle: título del nodo destino\r\n- label: etiqueta corta de la relación (ej: \"Sinergia Cripto\", \"Mitiga Riesgo\", \"Optimiza UX\", 2-3 palabras)\r\n- rationale: justificación conceptual en 1-2 oraciones explicando por qué conectar estas ideas eleva el pensamiento del proyecto.\r\n\r\n{{memoria}}\nResponde exclusivamente en este formato JSON:\r\n{\r\n  \"bridges\": [\r\n    {\r\n      \"sourceId\": \"id1\",\r\n      \"targetId\": \"id2\",\r\n      \"sourceTitle\": \"...\",\r\n      \"targetTitle\": \"...\",\r\n      \"label\": \"...\",\r\n      \"rationale\": \"...\"\r\n    }\r\n  ]\r\n}",
+    "schema": {
+      "type": "OBJECT",
+      "properties": {
+        "bridges": {
+          "type": "ARRAY",
+          "items": {
+            "type": "OBJECT",
+            "properties": {
+              "sourceId": {
+                "type": "STRING"
+              },
+              "targetId": {
+                "type": "STRING"
+              },
+              "sourceTitle": {
+                "type": "STRING"
+              },
+              "targetTitle": {
+                "type": "STRING"
+              },
+              "label": {
+                "type": "STRING"
+              },
+              "rationale": {
+                "type": "STRING"
+              }
+            },
+            "required": [
+              "sourceId",
+              "targetId",
+              "sourceTitle",
+              "targetTitle",
+              "label",
+              "rationale"
+            ]
+          }
+        }
+      },
+      "required": [
+        "bridges"
+      ]
+    },
+    "schema_alt": null,
+    "prompt_alt": null,
+    "schemas_all": [
+      "bridgesSchema"
+    ],
+    "fallbacks": {},
+    "body_fields": [],
+    "inner_conditions": [
+      "type === \"find_bridges\"",
+      "allNodes.length < 2"
+    ],
+    "response": {
+      "key": "bridges",
+      "nested": "bridges"
+    }
+  },
+  "braindump": {
+    "aliases": [],
+    "prompt": "Actúa como un arquitecto de mapas mentales y estructurador cognitivo de alto rendimiento.\r\n\"\"\"\r\n\"\"\"\r\n\r\nINSTRUCCIONES DE PROCESAMIENTO:\r\n1. Si la entrada es SIMPLE (una frase o pocas palabras): Extrae la idea nuclear en \"root\" y deriva proactivamente entre 3 y 5 sub-nodos lógicos esenciales (ej: Propuesta Central, Implementación Técnica, Adopción/Usuarios, Métricas de Éxito).\r\n2. Si la entrada es COMPLEJA o EXTENSA: Sintetiza el propósito global en \"root\" y descompón los diferentes aspectos en 4 a 8 sub-nodos categorizados con precisión. Si algún aspecto depende de otro nodo secundario en vez del núcleo, indica en \"connectsTo\" el tempId correspondiente; de lo contrario, \"connectsTo\": \"root\".\r\n3. Cada nodo debe tener un título conciso (máx. 5 palabras), una descripción breve y accionable (1-2 oraciones), una categoría en mayúsculas (ej: ARQUITECTURA, PRODUCTO, ESTRATEGIA, RIESGO, INVESTIGACIÓN, MÉTRICAS) y 2 tags clave.\r\n\r\nFormato JSON esperado:\r\n{\r\n  \"root\": {\r\n    \"title\": \"Idea Central Concisa\",\r\n    \"description\": \"Síntesis clara del propósito global\",\r\n    \"category\": \"NÚCLEO\",\r\n    \"tags\": [\"Tag1\", \"Tag2\"]\r\n  },\r\n  \"nodes\": [\r\n    {\r\n      \"tempId\": \"node-1\",\r\n      \"connectsTo\": \"root\",\r\n      \"title\": \"Título Corto\",\r\n      \"description\": \"Detalle explicativo breve\",\r\n      \"category\": \"CATEGORÍA\",\r\n      \"tags\": [\"Tag1\", \"Tag2\"]\r\n    }\r\n  ]\r\n}\n\n── DATOS DE ESTA PETICIÓN ──\nAnaliza la siguiente entrada del usuario, que puede ser desde una idea simple (una frase o concepto breve) hasta notas desordenadas o una especificación compleja con múltiples párrafos:\r\n{{rawText}}\r\n",
+    "schema": {
+      "type": "OBJECT",
+      "properties": {
+        "root": {
+          "type": "OBJECT",
+          "properties": {
+            "title": {
+              "type": "STRING"
+            },
+            "description": {
+              "type": "STRING"
+            },
+            "category": {
+              "type": "STRING"
+            },
+            "tags": {
+              "type": "ARRAY",
+              "items": {
+                "type": "STRING"
+              }
+            }
+          },
+          "required": [
+            "title",
+            "description",
+            "category",
+            "tags"
+          ]
+        },
+        "nodes": {
+          "type": "ARRAY",
+          "items": {
+            "type": "OBJECT",
+            "properties": {
+              "tempId": {
+                "type": "STRING"
+              },
+              "connectsTo": {
+                "type": "STRING"
+              },
+              "title": {
+                "type": "STRING"
+              },
+              "description": {
+                "type": "STRING"
+              },
+              "category": {
+                "type": "STRING"
+              },
+              "tags": {
+                "type": "ARRAY",
+                "items": {
+                  "type": "STRING"
+                }
+              }
+            },
+            "required": [
+              "tempId",
+              "connectsTo",
+              "title",
+              "description",
+              "category",
+              "tags"
+            ]
+          }
+        }
+      },
+      "required": [
+        "root",
+        "nodes"
+      ]
+    },
+    "schema_alt": null,
+    "prompt_alt": null,
+    "schemas_all": [
+      "braindumpSchema"
+    ],
+    "fallbacks": {
+      "fallbackStructure": {
+        "__error": "SyntaxError: Unexpected token ':'"
+      }
+    },
+    "body_fields": [
+      "rawText"
+    ],
+    "inner_conditions": [
+      "type === \"braindump\"",
+      "rawSegments.length === 0",
+      "childSegments.length === 0"
+    ],
+    "response": {
+      "key": "structure"
+    }
+  },
+  "refresh_templates": {
+    "aliases": [],
+    "prompt": "Actúa como arquitecto de innovación conceptual de vanguardia.\r\nGenera 5 nuevos núcleos de ideas conceptuales (plantillas de inicio de proyectos) manteniendo exactamente estos 5 tópicos/categorías:\r\n1. \"Tecnología\" (ej: Inteligencia de Agentes, Neurotecnología, Edge AI, Computación Cuántica, Biología Sintética)\r\n2. \"Negocios\" (ej: Modelos Circulares, Micro-SaaS B2B, Plataformas Algorítmicas, Finanzas Autónomas)\r\n3. \"Diseño\" (ej: Computación Espacial, Interfaces Generativas, Diseño Biomimético, Arquitectura de Sistemas)\r\n4. \"Investigación\" (ej: Modelos Cognitivos, Transición Energética, Epistemología de Redes Complejas)\r\n5. \"Esencial\" (ej: Primeros Principios, Deep Work, Reducción de Ruido)\r\n\r\nPara cada una de las 5 categorías, genera una estructura JSON con:\r\n- \"category\": Una de \"Tecnología\", \"Negocios\", \"Diseño\", \"Investigación\", \"Esencial\"\r\n- \"title\": Título atractivo e inspirador (máx. 6 palabras)\r\n- \"description\": Resumen de 1-2 oraciones explicando la propuesta y visión\r\n- \"iconName\": Uno de \"Bot\", \"Rocket\", \"Compass\", \"BookOpen\", \"PlusCircle\"\r\n- \"colorAccent\": Color hex (#6366f1, #10b981, #f59e0b, #8b5cf6, #06b6d4)\r\n- \"root\": { \"title\": string, \"description\": string, \"tags\": string[] }\r\n- \"nodes\": Array de 3 a 4 sub-nodos derivados que ramifican la idea, cada uno con:\r\n    - \"title\": Título conciso del concepto derivado\r\n    - \"description\": Breve detalle explicativo\r\n    - \"category\": Nombre de la sub-etiqueta (ej: \"OPTIMIZACIÓN\", \"ARQUITECTURA\", \"VALIDACIÓN\")\r\n    - \"tags\": Array de 2 o 3 tags clave\r\n    - \"connectionLabel\": Etiqueta de la relación con el núcleo",
+    "schema": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "category": {
+            "type": "STRING"
+          },
+          "title": {
+            "type": "STRING"
+          },
+          "description": {
+            "type": "STRING"
+          },
+          "iconName": {
+            "type": "STRING"
+          },
+          "colorAccent": {
+            "type": "STRING"
+          },
+          "root": {
+            "type": "OBJECT",
+            "properties": {
+              "title": {
+                "type": "STRING"
+              },
+              "description": {
+                "type": "STRING"
+              },
+              "tags": {
+                "type": "ARRAY",
+                "items": {
+                  "type": "STRING"
+                }
+              }
+            },
+            "required": [
+              "title",
+              "description",
+              "tags"
+            ]
+          },
+          "nodes": {
+            "type": "ARRAY",
+            "items": {
+              "type": "OBJECT",
+              "properties": {
+                "title": {
+                  "type": "STRING"
+                },
+                "description": {
+                  "type": "STRING"
+                },
+                "category": {
+                  "type": "STRING"
+                },
+                "tags": {
+                  "type": "ARRAY",
+                  "items": {
+                    "type": "STRING"
+                  }
+                },
+                "connectionLabel": {
+                  "type": "STRING"
+                }
+              },
+              "required": [
+                "title",
+                "description",
+                "category",
+                "tags"
+              ]
+            }
+          }
+        },
+        "required": [
+          "category",
+          "title",
+          "description",
+          "root",
+          "nodes"
+        ]
+      }
+    },
+    "schema_alt": null,
+    "prompt_alt": null,
+    "schemas_all": [
+      "templatesSchema"
+    ],
+    "fallbacks": {},
+    "body_fields": [],
+    "inner_conditions": [
+      "type === \"refresh_templates\""
+    ],
+    "response": {
+      "key": "templates",
+      "extra": {
+        "source": "gemini"
+      }
+    }
+  },
+  "condensar": {
+    "aliases": [],
+    "prompt": "Sos el Motor de Condensación de NodeFlow. Reducís un conjunto de ideas a UN macro-concepto ejecutable, sin perder de vista el objetivo.\n\nDevolvé EXACTAMENTE estos campos y ningún otro:\n- title: el macro-concepto en UNA frase corta y concreta (máximo 12 palabras).\n- description: qué abarca y qué queda resuelto, en 2 o 3 oraciones.\n- resumen: qué se descartó como redundante o ya resuelto, y por qué.\n- principio: el principio sólido que queda tras la poda, en una oración.\n- match: número de 0 a 1: cuánto aporta al Norte Estratégico.\n- tags: 3 etiquetas cortas.\nNo uses un campo distinto de estos ni agregues campos anidados.\n\n── DATOS DE ESTA PETICIÓN ──\nNORTE ESTRATÉGICO (lo que el usuario quiere lograr):\n\"{{objetivo}}\"\nIDEAS A CONDENSAR ({{cantidad}} nodos):\n{{listaNodos}}\n{{memoria}}\n",
+    "schema": {
+      "type": "OBJECT",
+      "properties": {
+        "title": {
+          "type": "STRING"
+        },
+        "description": {
+          "type": "STRING"
+        },
+        "resumen": {
+          "type": "STRING"
+        },
+        "principio": {
+          "type": "STRING"
+        },
+        "match": {
+          "type": "NUMBER"
+        },
+        "tags": {
+          "type": "ARRAY",
+          "items": {
+            "type": "STRING"
+          }
+        }
+      },
+      "required": [
+        "title",
+        "description",
+        "resumen",
+        "match"
+      ]
+    },
+    "response": {
+      "key": "condensar"
+    }
+  },
+  "voz": {
+    "aliases": [],
+    "prompt": "Sos el intérprete de voz de NodeFlow. El usuario acaba de hablar y hay que traducir sus palabras\nen OPERACIONES sobre su lienzo de ideas. No sos un chatbot: sos quien ejecuta.\n\nDevolvé:\n- intencion: \"capturar\" si quiere sumar ideas nuevas, \"comando\" si quiere operar sobre lo que ya existe.\n- respuesta: en primera persona y en UNA frase. Si el pedido es una CONSULTA, acá va el DATO que te\r\n  preguntó (no \"qué vas a hacer\": lo que ves en el lienzo). Si es una operación, qué vas a hacer.\r\n  Lo que digas acá se dice EN VOZ ALTA, así que tiene que sonar natural leído.\n- comandos: la lista de operaciones. Acciones permitidas y sus campos:\n  · crear     → {accion, titulo, descripcion, categoria}  (el `titulo` es el TEMA en 2 a 6 palabras, SIN muletillas del habla —«quiero explorar la idea de…», «me gustaría…», «estaría bueno…», «la idea es…»—: «comandos por voz», no «quiero explorar la idea de comandos por voz». La frase tal como se dijo va en `descripcion`.)\n  · enlazar   → {accion, desde, hasta}  (ids del lienzo, o el título exacto de un nodo que creás en esta lista)\n  · enfocar   → {accion, criterio, nodos:[ids]}  (se conservan EXACTAMENTE esos nodos; el resto se colapsa)\n  · condensar → {accion, nodos:[ids]}\n  · criticar  → {accion, nodos:[ids]}\n  · actualizar → {accion, nodo, titulo, descripcion, categoria, maturity, tags}  (MUTA un nodo que YA\n                existe, sin crear otro: cambiarlo de fase con maturity 1 a 5, ampliar su descripción,\n                corregirle el título o sumarle etiquetas. Es la operación de \"esto evolucionó\".)\n  · responder → {accion, nodo, respuesta}  (cierra una PREGUNTA del lienzo: `nodo` es el id de la pregunta y\n                `respuesta` el texto de la respuesta. Se crea el nodo RESPUESTA enlazado y la pregunta queda\n                respondida. Es la operación de \"esto ya lo pensé\".)\n  · aceptar   → {accion, nodos:[ids]}  (decide que esas ideas se QUEDAN. No crea ni borra nada.)\n  · descartar → {accion, nodos:[ids]}  (decide que esas ideas salen del camino: NO se borran — quedan\n                atenuadas y se pueden recuperar. Es la decisión, no la destrucción.)\n  · delegar   → {accion, pedido}  (para lo que NO se resuelve con el lienzo: buscar en la web, verificar si algo\n                sigue existiendo, comparar productos o precios, leer un repositorio. Escribí el pedido COMPLETO\n                y concreto, como se lo pedirías a un investigador. Es la operación CARA: una sola por pedido.)\r\n  · consultar → {accion, tema}  (NO toca el lienzo: sirve para PREGUNTAR por lo que YA está en él\r\n                — \"¿qué quedó abierto?\", \"¿qué está sin madurez?\", \"¿cuántas ideas hay sin decidir?\",\r\n                \"¿en qué fase está esto?\" — y la respuesta va en `respuesta`, hablada. Mientras el\r\n                pedido se conteste con el listado del lienzo, es `consultar` y NO `delegar`.)\n\nReglas:\n- Usá SOLO los ids que aparecen arriba. Nunca inventes ids.\n- **PREFERÍ UNA SOLA OPERACIÓN.** Si el pedido es limpiar, filtrar, reducir o enfocar el lienzo en una idea,\n  devolvé UN ÚNICO comando 'enfocar' con los ids de los nodos que hay que CONSERVAR (los que tratan de esa\n  idea y sus conceptos vecinos): el resto se colapsa solo, así que NO agregues 'condensar' para el resto.\n- Sólo usá varios comandos si el pedido tiene partes explícitas y distintas (ej.: \"creá esto y además cuestioná aquello\").\n- Una consulta se contesta SÓLO con lo que está en el listado de nodos. Si el dato no está (por ejemplo\r\n  cuántas horas tardó algo, o qué dice un archivo), decilo en 'respuesta' — nunca inventes un dato, un\r\n  número ni un id.\r\n- Si el pedido es una PREGUNTA que necesita información de afuera (\"averiguá\", \"buscá\", \"¿sigue fabricándose?\",\n  \"compará precios\", \"¿qué dice la documentación?\"), devolvé UN comando 'delegar' con el pedido completo y NO\n  intentes responderla vos: no tenés esa información.\r\n- Si el pedido es una PREGUNTA sobre el LIENZO (qué hay, qué quedó abierto, en qué fase está algo,\r\n  cuántos nodos hay sin decidir, qué está sin madurez), usá UN comando 'consultar' y contestala vos en\r\n  'respuesta' con lo que ves en el listado de arriba. NO la mandes a 'delegar' (eso es para información\r\n  de afuera) y NO inventes datos que no estén en el lienzo: si con lo que ves no alcanza, decilo.\n- Sobre DECIDIR (importante): si el pedido es una decisión sobre lo que ya existe (\"esto queda\", \"esa no va\",\n  \"dale, sigamos con estas\", \"descartá esas dos\"), usá `aceptar` o `descartar` con esos ids. NUNCA borres:\n  borrar es del humano, con la papelera. Descartar deja la idea atenuada y recuperable.\n- Si el pedido es responder algo que el lienzo ya se preguntó (\"ya lo pensé: es X\", \"contestá esa pregunta\",\n  \"la respuesta es...\"), usá `responder` con el id de esa pregunta y el texto.\n- Sobre mutar en vez de crear (importante):\n- Si el pedido se refiere a algo que YA está en el lienzo (\"cambiale el título\", \"ampliá esto\", \"marcá que\n  ya está sintetizado\", \"ponelo en fase de cristalización\"), usá `actualizar` sobre ese nodo. NO crees un\n  nodo nuevo repitiendo lo que ya existe.\n\nSobre el hilo (importante):\n- Resolvé las referencias con el hilo: \"eso\", \"lo anterior\", \"dale vuelta\", \"y si…\", \"seguí\" se refieren\n  a lo último conversado. No empieces de cero.\n- No repitas lo que ya se hizo. Si el pedido continúa el trabajo, continuá desde donde quedó el foco.\n- Si el pedido es ambiguo y el hilo no alcanza, devolvé comandos vacíos y hacé UNA pregunta corta en\n  'respuesta'. Preguntar es mejor que ejecutar lo que no se pidió.\n- Si no hay nada que corresponda, devolvé comandos vacíos y explicá en 'respuesta'.\n- Ejemplo: «limpiá el lienzo y dejá sólo lo que se conecta con el orquestador de voz» → un 'enfocar'\n  con los ids de los nodos de voz, orquestación, NodeFlow y memoria persistida.\n\n── DATOS DE ESTA PETICIÓN (lo único que cambia) ──\nLO QUE DIJO (transcripción):\n\"{{texto}}\"\nEL LIENZO AHORA (id · título · categoría · madurez m1-m5 · estado: PREGUNTA ABIERTA / respondida /\r\naceptada / descartada), una línea por nodo:\n{{lienzo}}\nLO ÚLTIMO QUE SE DIJERON (el hilo de esta conversación, lo más nuevo abajo):\n{{dialogo}}\nEN QUÉ ESTÁ ENFOCADA LA CONVERSACIÓN AHORA:\n{{foco}}\n{{memoria}}\n",
+    "schema": {
+      "type": "OBJECT",
+      "properties": {
+        "intencion": {
+          "type": "STRING"
+        },
+        "respuesta": {
+          "type": "STRING"
+        },
+        "motivo": {
+          "type": "STRING"
+        },
+        "comandos": {
+          "type": "ARRAY",
+          "items": {
+            "type": "OBJECT",
+            "properties": {
+              "accion": {
+                "type": "STRING"
+              },
+              "titulo": {
+                "type": "STRING"
+              },
+              "descripcion": {
+                "type": "STRING"
+              },
+              "categoria": {
+                "type": "STRING"
+              },
+              "criterio": {
+                "type": "STRING"
+              },
+              "nodos": {
+                "type": "ARRAY",
+                "items": {
+                  "type": "STRING"
+                }
+              },
+              "desde": {
+                "type": "STRING"
+              },
+              "hasta": {
+                "type": "STRING"
+              },
+              "nodo": {
+                "type": "STRING"
+              },
+              "respuesta": {
+                "type": "STRING"
+              },
+              "pedido": {
+                "type": "STRING"
+              },
+              "tema": {
+                "type": "STRING"
+              },
+              "maturity": {
+                "type": "NUMBER"
+              },
+              "tags": {
+                "type": "ARRAY",
+                "items": {
+                  "type": "STRING"
+                }
+              }
+            },
+            "required": [
+              "accion"
+            ]
+          }
+        }
+      },
+      "required": [
+        "intencion",
+        "respuesta",
+        "comandos"
+      ]
+    },
+    "response": {
+      "key": "voz"
+    }
+  }
+}
