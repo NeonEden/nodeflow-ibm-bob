@@ -4,7 +4,7 @@ import { type EstadoVoz } from '../services/speechmaticsRt';
 import { crearClienteStt, type ClienteStt } from '../services/sttRt';
 import { apiUrl } from '../services/apiBase';
 import { trazaVoz } from '../services/trazaVoz';
-import { getVozEstado, getVozJwt, pedirPlanVoz, describirComando, decir, hablarConElSistema, clasificarParcial, msQuieto, MS_ESTABILIDAD_CLIENTE, VozEstado, PlanVoz, VozComando } from '../services/vozService';
+import { getVozEstado, getVozJwt, pedirPlanVoz, describirComando, decir, hablarConElSistema, clasificarParcial, msQuieto, MS_ESTABILIDAD_CLIENTE, MS_UMBRAL_TOGGLE, ErrorOcupado, VozEstado, PlanVoz, VozComando } from '../services/vozService';
 import { useIdioma } from '../i18n/useIdioma';
 import { esAfirmativo, planEsConsulta } from '../utils/voz';
 
@@ -237,6 +237,18 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
   /** Último turno cerrado: el cierre real de la sesión a los 90 s de inactividad se mide desde acá. */
   const ultimaActividadRef = useRef(0);
   const inicioRef = useRef(0);
+  /**
+   * Instante (performance.now) en que se recibió el último `pressed` del atajo global.
+   * Decide si el `released` siguiente es push-to-talk (≥ MS_UMBRAL_TOGGLE) o sólo un toque de
+   * interruptor (< MS_UMBRAL_TOGGLE) que no tiene que cortar el turno.
+   */
+  const atajoPresadoRef = useRef(0);
+  /**
+   * Número de turno en el que se ejecutó el último cierre. Evita que el mismo turno se cierre
+   * varias veces: la traza del 26/09 mostró el turno 15 cerrándose cuatro veces seguidas con
+   * textos distintos (chars=4, 0, 5, 0).
+   */
+  const turnoUltimoCierreRef = useRef(-1);
 
   const consultarEstado = useCallback(async () => {
     try {
@@ -687,6 +699,12 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
       window.clearTimeout(evalTimerRef.current);
       evalTimerRef.current = null;
     }
+    // Dedup: si este turno ya se cerró (puede pasar con el toggle + released en el mismo ciclo),
+    // ignorar silenciosamente. Traza para poder contarlo después.
+    if (turnoUltimoCierreRef.current === turnoRef.current) {
+      trazaVoz('turno.cierre_duplicado', { turno: turnoRef.current });
+      return;
+    }
     const rt = rtRef.current;
     if (!rt) {
       // Todavía no hay cliente: `empezar()` está abriendo la sesión (pide el token por HTTP) y el atajo ya
@@ -705,6 +723,9 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
     // conexión queda viva para el turno siguiente; si no, se corta y se vuelve a abrir como siempre.
     const reusa = Boolean(rt.cerrarTurno);
     const fuente: 'ForceEndpoint' | 'stop' = reusa ? 'ForceEndpoint' : 'stop';
+    // Marcar el turno como cerrado ANTES de await: si una segunda llamada llega mientras el
+    // socket todavía está cerrando, el guard de arriba la descarta.
+    turnoUltimoCierreRef.current = turnoRef.current;
     const dictado = (await (reusa ? rt.cerrarTurno!() : rt.stop())).trim();
     turnosServidosRef.current += 1;
     ultimaActividadRef.current = performance.now();
@@ -724,13 +745,16 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
     setParcial('');
     onTurnoCerrado?.(); // el turno cerró: el borrador del lienzo se retira
     setTexto(dictado);
-    if (!dictado) {
-      setError('No se escuchó nada. Probá de nuevo hablando más cerca del micrófono.');
+    // Cierre vacío o con < 3 palabras: no molestar al motor. La traza queda para medirlo.
+    // Un cierre con dos palabras no es un error del usuario: no se muestra error visible.
+    if (!dictado || dictado.trim().split(/\s+/).filter(Boolean).length < 3) {
+      if (!dictado) {
+        setError('No se escuchó nada. Probá de nuevo hablando más cerca del micrófono.');
+      }
+      trazaVoz('turno.descartado', { turno: turnoRef.current, motivo: !dictado ? 'vacio' : 'pocas_palabras', chars: dictado.length });
       setEstado('inactivo');
-      // En conversación el turno no se corta por un silencio: se vuelve a escuchar (después de que
-      // termine de sonar el aviso, no encima).
       if (continuoRef.current) {
-        await hablar('No te escuché. ¿Me lo repetís?');
+        await hablar(!dictado ? 'No te escuché. ¿Me lo repetís?' : 'Esperá que termines la frase. ¿Qué más?');
         void seguirEscuchando();
       }
       return;
@@ -854,7 +878,12 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
       // turno, el motor NO vuelve a hablar: eran dos voces seguidas y sonaba a bot confundido.
       if (p.hablar && !silencio && !guionHabloRef.current) void hablar(p.respuesta || '');
     } catch (e: any) {
-      setError(e?.message || 'El motor no pudo interpretar el dictado.');
+      if (e instanceof ErrorOcupado) {
+        // 409 ocupado: el aviso ya salió por nodeflow:aviso; no limpiamos el fantasma del lienzo.
+        trazaVoz('ocupado', { turno: turnoRef.current, msg: e.message });
+      } else {
+        setError(e?.message || 'El motor no pudo interpretar el dictado.');
+      }
     } finally {
       setPensando(false);
     }
@@ -870,15 +899,39 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
   empezarRef.current = empezar;
 
   /**
-   * Pedido del atajo global (Ctrl+Shift+Space): al presionar empieza el turno, al soltar se corta.
-   * Se observa el contador `n` y no el objeto: dos pulsaciones seguidas tienen que ejecutarse las dos.
+   * Pedido del atajo global (Ctrl+Shift+Space).
+   *
+   * Lógica de toggle (26/09/2026): la primera prueba real mostró que el usuario tecleaba el atajo
+   * en lugar de mantenerlo, generando 15 pares pressed/released en < 1 s y turnos solapados.
+   * Solución: `pressed` con el micrófono encendido cierra el turno en el acto; `released` antes de
+   * MS_UMBRAL_TOGGLE se ignora (el toque corto ya cerró o ya abrió). `released` a los 400 ms o más
+   * cierra: sigue siendo push-to-talk para quien mantiene.
+   *
+   * Se observa el contador `n` y no el objeto: dos pulsaciones seguidas se ejecutan las dos.
    */
   useEffect(() => {
     if (!pedidoExterno) return;
     // El pedido del atajo se atiende también con el panel CERRADO: es justamente así como se usa (dictar
     // sin abrir el modal, con el lienzo a la vista).
-    if (pedidoExterno.accion === 'empezar') void empezarRef.current?.('atajo');
-    else void cortarRef.current?.();
+    if (pedidoExterno.accion === 'empezar') {
+      const micEncendido = estado !== 'inactivo' && estado !== 'error';
+      if (micEncendido) {
+        // Toggle: el mismo botón que empezó, cierra.
+        trazaVoz('atajo.toggle', { turno: turnoRef.current, estado });
+        void cortarRef.current?.();
+      } else {
+        atajoPresadoRef.current = performance.now();
+        void empezarRef.current?.('atajo');
+      }
+    } else {
+      // released: sólo cortar si el pressed duró al menos MS_UMBRAL_TOGGLE (push-to-talk).
+      const duracion = performance.now() - atajoPresadoRef.current;
+      if (duracion >= MS_UMBRAL_TOGGLE) {
+        void cortarRef.current?.();
+      } else {
+        trazaVoz('atajo.toque_corto', { duracion_ms: Math.round(duracion), turno: turnoRef.current });
+      }
+    }
     // Sólo el contador: el pedido se ejecuta una vez por pulsación.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedidoExterno?.n]);

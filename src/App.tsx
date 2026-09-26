@@ -617,10 +617,20 @@ export default function App() {
         // Si es `undefined` (no hay backend o es la primera vez), caemos a la regla local.
         //
         // `null` significa que el backend no contestó a tiempo: misma ruta que `undefined` → local.
+        const hayFantasmaActual = nds.some((n) => n.id === ID_FANTASMA);
+
         if (decisionParcial !== undefined) {
-          // Camino del backend.
+          // `nada` o `null` (backend ausente/lento): NO borrar un fantasma que ya está dibujado.
+          // Regla del 26/09/2026: los parciales intermedios del turno contestan «nada» porque el texto
+          // aún no es estable. Si cada «nada» borrara el fantasma, aparece/desaparece constantemente.
+          // El fantasma sólo se retira cuando el turno muere sin parciales (onTurnoCerrado).
           if (decisionParcial === null || decisionParcial.clase === 'nada') {
-            // Backend ausente/lento o parcial descartado: cae a la regla local.
+            if (hayFantasmaActual) {
+              // Ya hay fantasma: no lo tocamos. El «nada» es del segmentador para el parcial actual,
+              // no una orden de borrar.
+              return nds;
+            }
+            // Sin fantasma todavía: cae a la regla local (puede que la idea aún no llegó al umbral).
             if (!esIdeaEnVivo(draftVoz)) {
               return sinFantasma.length === nds.length ? nds : sinFantasma;
             }
@@ -629,7 +639,7 @@ export default function App() {
             const fantasma = nodoFantasma(draftVoz, ancla) as CustomNode;
             return [...sinFantasma, fantasma];
           }
-          // `semilla` o `correccion`: dibujar el fantasma con el texto del backend.
+          // `semilla` o `correccion`: dibujar/actualizar el fantasma con el texto del backend.
           const textoParaFantasma = decisionParcial.texto || draftVoz;
           const ancla =
             nds.find((n) => n.id !== ID_FANTASMA && n.data.isRoot) ?? nds.find((n) => n.id !== ID_FANTASMA);
@@ -646,7 +656,8 @@ export default function App() {
 
         // ── Regla local (fallback: sin backend o decisión aún no llegada) ────────────────────────
         if (!esIdeaEnVivo(draftVoz)) {
-          // Sin idea todavía no hay nada que dibujar (y si había fantasma, se retira).
+          // Sin idea todavía: no borrar el fantasma que ya está (misma lógica que arriba).
+          if (hayFantasmaActual) return nds;
           return sinFantasma.length === nds.length ? nds : sinFantasma;
         }
         // Nace pegado al ancla del árbol (o al primer nodo): se ve DÓNDE va a caer, no en el vacío.

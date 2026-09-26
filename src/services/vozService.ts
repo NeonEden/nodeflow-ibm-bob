@@ -39,6 +39,17 @@ export interface DecisionParcial {
  */
 export const MS_ESTABILIDAD_CLIENTE = 300;
 
+/**
+ * Umbral que separa un toque corto (interruptor) de un push-to-talk mantenido.
+ *
+ * Por qué existe: la primera prueba real (26/09) mostró que el usuario tecleaba el atajo en vez
+ * de mantenerlo apretado, generando 15 pares pressed/released en < 1 s y turnos solapados. Con
+ * este umbral, un `released` que llega antes de 400 ms no corta el turno — el atajo ya lo cerró
+ * al hacer `pressed` con el micrófono encendido. Un `released` que llega después sí corta: es el
+ * push-to-talk de siempre.
+ */
+export const MS_UMBRAL_TOGGLE = 400;
+
 /** Tiempo (ms) que el parcial lleva sin cambiar. Nunca negativo (`performance.now()` puede repetir). */
 export function msQuieto(ahora: number, ultimoCambio: number): number {
   return Math.max(0, Math.round(ahora - ultimoCambio));
@@ -224,11 +235,29 @@ export async function setVozProveedor(id: string): Promise<{ elegido: string; id
   return { elegido: d.elegido, idiomas: d.idiomas, nota: d.nota };
 }
 
+/**
+ * Error marcado que indica que el backend estaba ocupado (409 con `ocupado: true`). El panel de voz
+ * lo trata de forma silenciosa: el aviso ya salió por el canal `nodeflow:aviso` desde `aiApi.ts`,
+ * y el fantasma del lienzo no se limpia.
+ */
+export class ErrorOcupado extends Error {
+  readonly ocupado = true;
+  constructor(msg: string) {
+    super(msg);
+    this.name = 'ErrorOcupado';
+  }
+}
+
 /** Manda lo dictado y recibe el plan ya validado contra el lienzo real. */
 export async function pedirPlanVoz(texto: string): Promise<PlanVozRespuesta> {
   const r = await postAiAction({ type: 'voz', texto });
   const d = await r.json();
-  if (!d.success) throw new Error(d?.error || 'No pude interpretar lo que dijiste.');
+  if (!d.success) {
+    // 409 con ocupado:true: el aviso ya salió por nodeflow:aviso; acá sólo se marca para que el
+    // panel pueda ignorarlo silenciosamente sin limpiar el fantasma del lienzo.
+    if (d.ocupado) throw new ErrorOcupado(d?.error || 'Ya hay una generación en curso.');
+    throw new Error(d?.error || 'No pude interpretar lo que dijiste.');
+  }
   const plan = d.voz as PlanVoz;
   return { plan, modelo: d.modelUsed || '', uso: d.uso || {} };
 }

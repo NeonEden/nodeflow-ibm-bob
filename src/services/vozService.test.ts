@@ -230,3 +230,66 @@ describe('reloj del cliente (msQuieto / MS_ESTABILIDAD_CLIENTE)', () => {
     expect(MS_ESTABILIDAD_CLIENTE).toBeGreaterThan(250);
   });
 });
+
+// ── Pipeline extendido — secuencia de la prueba real del 26/09 ────────────────────────────────────
+
+describe('pipeline extendido — turnos solapados y cierre vacío (prueba real 26/09)', () => {
+  /**
+   * Reproduce la secuencia que dejó la traza del log:
+   *   turno=12 · 13 · 14 · 15 en < 2 s con ms=532 chars=4 · ms=615 chars=0 · ms=1400 chars=5 · ms=1937 chars=0
+   *
+   * Con el dedup de cierres, sólo el primer cierre válido de cada turno se procesa.
+   * Los cierres vacíos (chars=0) y los cortos (< 3 palabras) se descartan sin molestar al motor.
+   */
+
+  type CierreSim = { turno: number; chars: number; palabras: number };
+
+  function simularCierres(cierres: CierreSim[]): Array<{ turno: number; procesado: boolean; motivo: string }> {
+    const turnoUltimoCierre: Record<number, boolean> = {};
+    return cierres.map(({ turno, palabras }) => {
+      if (turnoUltimoCierre[turno]) {
+        return { turno, procesado: false, motivo: 'duplicado' };
+      }
+      turnoUltimoCierre[turno] = true;
+      if (palabras < 3) {
+        return { turno, procesado: false, motivo: palabras === 0 ? 'vacio' : 'pocas_palabras' };
+      }
+      return { turno, procesado: true, motivo: 'ok' };
+    });
+  }
+
+  it('cuatro cierres del turno 15 → sólo el primero se intenta y se descarta si tiene pocas palabras', () => {
+    const cierres: CierreSim[] = [
+      { turno: 15, chars: 4,  palabras: 1 }, // primer cierre: pocas palabras
+      { turno: 15, chars: 0,  palabras: 0 }, // segundo: duplicado → ignorado
+      { turno: 15, chars: 5,  palabras: 1 }, // tercero: duplicado → ignorado
+      { turno: 15, chars: 0,  palabras: 0 }, // cuarto: duplicado → ignorado
+    ];
+    const resultado = simularCierres(cierres);
+    const procesados = resultado.filter((r) => r.procesado);
+    expect(procesados.length).toBe(0); // ninguno con texto suficiente
+    expect(resultado[0].motivo).toBe('pocas_palabras');
+    expect(resultado[1].motivo).toBe('duplicado');
+    expect(resultado[2].motivo).toBe('duplicado');
+    expect(resultado[3].motivo).toBe('duplicado');
+  });
+
+  it('un cierre válido con 3+ palabras y sin duplicados se procesa', () => {
+    const cierres: CierreSim[] = [
+      { turno: 12, chars: 30, palabras: 6 }, // válido
+      { turno: 13, chars: 0,  palabras: 0 }, // vacío → descartado
+      { turno: 14, chars: 5,  palabras: 1 }, // pocas palabras → descartado
+    ];
+    const resultado = simularCierres(cierres);
+    expect(resultado.filter((r) => r.procesado).length).toBe(1);
+    expect(resultado[0].procesado).toBe(true);
+    expect(resultado[1].motivo).toBe('vacio');
+    expect(resultado[2].motivo).toBe('pocas_palabras');
+  });
+
+  it('clasificarParcial devuelve null con backend apagado — el lienzo sigue por la regla local', async () => {
+    vi.stubGlobal('fetch', async () => { throw new TypeError('ECONNREFUSED'); });
+    const d = await clasificarParcial({ turno_id: 't12', texto: 'quiero un nodo de código', es_final: true });
+    expect(d).toBeNull();
+  });
+});

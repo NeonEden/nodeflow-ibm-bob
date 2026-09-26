@@ -22,8 +22,13 @@ export type EventoVoz =
   | 'parcial.primero'
   | 'turno.cerrado'
   | 'turno.cancelado'
+  | 'turno.cierre_duplicado'
+  | 'turno.descartado'
   | 'sesion.inactiva'
   | 'sesion.cerrada'
+  | 'ocupado'
+  | 'atajo.toggle'
+  | 'atajo.toque_corto'
   | 'error';
 
 /** Valor de una traza: se recorta y se le sacan los espacios de más (es una línea, no un canal de datos). */
