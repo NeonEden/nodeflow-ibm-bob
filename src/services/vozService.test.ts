@@ -293,3 +293,64 @@ describe('pipeline extendido — turnos solapados y cierre vacío (prueba real 2
     expect(d).toBeNull();
   });
 });
+
+// ── `temas`: el campo que crea la CADENA de nodos ────────────────────────────────────────────────
+// ANCLA DEL DEFECTO (26/09/2026): el helper `respOk` de arriba —y por lo tanto todo el contrato— no
+// incluía `temas`, y el literal de retorno de `clasificarParcial` tampoco lo copiaba (el tipo lo
+// declaraba desde el pedido 04, el código no lo ponía). Resultado en la app: el panel recibía
+// `undefined`, llamaba a `onTurnoFinal(null)` y no creaba la cadena; se veía un único nodo fijo que se
+// sobreescribía (el borrador fantasma reusado en cada turno), sin error y sin traza. Estos tests fijan
+// el campo para que el contrato no vuelva a quedarse sin él.
+
+describe('clasificarParcial — temas (la cadena de nodos)', () => {
+  const respConTemas = (temas: unknown) =>
+    new Response(JSON.stringify({ clase: 'semilla', motivo: 'turno cerrado', titulo: 'primero', texto: 'primero', temas }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+  it('propaga los temas que devuelve el backend', async () => {
+    const temas = [
+      { titulo: 'quiero un nodo de audio', texto: 'quiero un nodo de audio para el sintetizador' },
+      { titulo: 'quiero un nodo de video', texto: 'quiero un nodo de video aparte' },
+    ];
+    vi.stubGlobal('fetch', async () => respConTemas(temas));
+
+    const d = await clasificarParcial({ turno_id: 's1', texto: 'x', es_final: true });
+
+    expect(d).not.toBeNull();
+    expect(d!.temas).toHaveLength(2);
+    expect(d!.temas![0].titulo).toBe('quiero un nodo de audio');
+    expect(d!.temas![1].texto).toBe('quiero un nodo de video aparte');
+  });
+
+  it('sin temas en la respuesta, el campo queda ausente (no inventa una cadena vacía)', async () => {
+    vi.stubGlobal('fetch', async () => respOk('semilla', 'turno cerrado', 'una idea', 'una idea'));
+
+    const d = await clasificarParcial({ turno_id: 's2', texto: 'x', es_final: true });
+
+    expect(d!.clase).toBe('semilla');
+    expect(d!.temas).toBeUndefined();
+  });
+
+  it('descarta los temas con forma inválida en vez de meter basura en el lienzo', async () => {
+    vi.stubGlobal('fetch', async () => respConTemas([
+      { titulo: 'ok', texto: 'un tema valido' },
+      { titulo: 42, texto: null },
+      'no soy un objeto',
+    ]));
+
+    const d = await clasificarParcial({ turno_id: 's3', texto: 'x', es_final: true });
+
+    expect(d!.temas).toHaveLength(1);
+    expect(d!.temas![0].titulo).toBe('ok');
+  });
+
+  it('un array con todo inválido equivale a no traer temas', async () => {
+    vi.stubGlobal('fetch', async () => respConTemas([{ titulo: 1, texto: 2 }, null]));
+
+    const d = await clasificarParcial({ turno_id: 's4', texto: 'x', es_final: true });
+
+    expect(d!.temas).toBeUndefined();
+  });
+});

@@ -93,11 +93,22 @@ export async function clasificarParcial(
     // Clases válidas; cualquier otra se trata como «nada» para que el cliente no se rompa.
     const claseValida = (c: unknown): c is DecisionParcial['clase'] =>
       c === 'nada' || c === 'semilla' || c === 'correccion';
+    // `temas` es lo que convierte el turno en una CADENA de nodos (pedido 06). Faltaba copiarlo acá: el
+    // tipo `DecisionParcial` ya lo declaraba (pedido 04) pero este literal construye un objeto NUEVO, así
+    // que el campo se perdía en el camino. El backend devolvía `temas` correctamente y el panel recibía
+    // `undefined` -> `onTurnoFinal(null)` -> no creaba nada, sin error y sin traza. El síntoma en la app era
+    // «un solo nodo, fijo, que se sobreescribe»: el borrador fantasma reusado en cada turno.
+    const temas = Array.isArray(d.temas)
+      ? (d.temas as Array<{ titulo?: unknown; texto?: unknown }>)
+          .filter((t) => t && typeof t.titulo === 'string' && typeof t.texto === 'string')
+          .map((t) => ({ titulo: t.titulo as string, texto: t.texto as string }))
+      : undefined;
     return {
       clase: claseValida(d.clase) ? d.clase : 'nada',
       motivo: typeof d.motivo === 'string' ? d.motivo : '',
       titulo: typeof d.titulo === 'string' ? d.titulo : null,
       texto: typeof d.texto === 'string' ? d.texto : '',
+      ...(temas && temas.length ? { temas } : {}),
     };
   } catch {
     // AbortError (timeout), error de red, o JSON inválido: todo es null para el llamador.
