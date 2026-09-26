@@ -242,6 +242,7 @@ pub fn spawn(data_dir: PathBuf, env_key: Option<String>, vault: Arc<Vault>, memo
             .route("/api/voz/proveedores", get(voz_proveedores))
             .route("/api/voz/proveedor", post(voz_proveedor))
             .route("/api/voz/traza", post(voz_traza))
+            .route("/api/voz/parcial", post(voz_parcial))
             .route("/api/claves/estado", get(claves_estado))
             .route("/api/claves/migrar", post(claves_migrar))
             .route("/api/claves", post(claves_guardar))
@@ -3182,6 +3183,56 @@ fn linea_traza(evento: &str, campos: &str) -> String {
     )
     .trim_end()
     .to_string()
+}
+
+/// `POST /api/voz/parcial` — clasifica el parcial del turno de voz para el lienzo en vivo (Fase C).
+///
+/// Responde en < 50 ms: es texto puro, sin red ni modelos. El endpoint recibe el transcript parcial
+/// que emite AssemblyAI mientras el usuario habla y devuelve si vale la pena dibujar un borrador,
+/// si el usuario está corrigiendo lo que dijo, o si hay que esperar más.
+///
+/// Cuerpo: `{ "turno_id": "…", "texto": "…", "anterior": "…", "ms_desde_cambio": 120, "es_final": false }`
+/// Respuesta: `{ "clase": "nada"|"semilla"|"correccion", "motivo": "…", "titulo": "…"|null, "texto": "…" }`
+async fn voz_parcial(Json(body): Json<Value>) -> impl IntoResponse {
+    let texto = match body["texto"].as_str() {
+        Some(t) => t,
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "success": false, "error": "Falta el campo `texto`." })),
+            );
+        }
+    };
+    let anterior = body["anterior"].as_str();
+    let ms_desde_cambio = body["ms_desde_cambio"].as_u64();
+    let es_final = body["es_final"].as_bool().unwrap_or(false);
+
+    let entrada = crate::segmentador::Entrada {
+        texto,
+        anterior,
+        ms_desde_cambio,
+        es_final,
+    };
+    let dec = crate::segmentador::clasificar(&entrada);
+
+    let clase_str = match dec.clase {
+        crate::segmentador::ClaseParcial::Nada => "nada",
+        crate::segmentador::ClaseParcial::Semilla => "semilla",
+        crate::segmentador::ClaseParcial::Correccion => "correccion",
+    };
+
+    // El motivo va al log: permite auditar qué se descartó y cuánto.
+    log::info!("voz/parcial clase={clase_str} motivo=\"{}\"", dec.motivo);
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "clase": clase_str,
+            "motivo": dec.motivo,
+            "titulo": dec.titulo,
+            "texto": dec.texto,
+        })),
+    )
 }
 
 /// `POST /api/ai/evaluar` — corre la planilla sobre los motores pedidos (por defecto, los locales).
@@ -6166,5 +6217,75 @@ mod tests_voz_comandos {
         let plano = json!({ "comandos": [{ "accion": "enfocar" }] });
         assert!(voz_tiene_comandos(&plano, None));
         assert!(!voz_tiene_comandos(&json!({ "comandos": [] }), None));
+    }
+}
+
+/// Tests del endpoint del parcial (`POST /api/voz/parcial`, Fase C del plan).
+///
+/// Por qué existen: los tests del segmentador prueban la regla, pero **no** prueban el contrato de la
+/// ruta —que es lo que va a consumir el frontend—. Acá se ejercita el handler de verdad: cuerpo JSON
+/// adentro, respuesta JSON afuera, sin levantar la app ni la red.
+#[cfg(test)]
+mod tests_voz_parcial {
+    use super::*;
+    use axum::body::to_bytes;
+
+    /// Llama al handler como lo haría el router y devuelve (status, cuerpo).
+    async fn pedir(cuerpo: Value) -> (StatusCode, Value) {
+        let res = voz_parcial(Json(cuerpo)).await.into_response();
+        let status = res.status();
+        let bytes = to_bytes(res.into_body(), 1 << 20).await.expect("cuerpo de la respuesta");
+        (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    }
+
+    #[tokio::test]
+    async fn sin_texto_responde_400_con_mensaje_claro() {
+        let (status, body) = pedir(json!({ "es_final": true })).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(body["error"].as_str().unwrap_or_default().contains("texto"));
+    }
+
+    #[tokio::test]
+    async fn turno_cerrado_devuelve_semilla_con_el_contrato_completo() {
+        let (status, body) = pedir(json!({ "texto": "  quiero un sintetizador  ", "es_final": true })).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["clase"], "semilla");
+        // El texto sale recortado (es lo que se dibuja), pero sin cambiar el contenido.
+        assert_eq!(body["texto"], "quiero un sintetizador");
+        assert!(body["motivo"].as_str().unwrap_or_default().contains("3 palabras"));
+        // El contrato declara la clave aun cuando el título lo arma el cliente.
+        assert!(body.get("titulo").is_some(), "la clave `titulo` tiene que viajar siempre");
+    }
+
+    #[tokio::test]
+    async fn correccion_explicita_se_declara_como_tal() {
+        let (status, body) = pedir(json!({ "texto": "no, mejor de código" })).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["clase"], "correccion");
+    }
+
+    #[tokio::test]
+    async fn el_ruido_se_descarta_y_el_motivo_es_auditable() {
+        let (_, body) = pedir(json!({ "texto": "hola mundo" })).await;
+        assert_eq!(body["clase"], "nada");
+        // El motivo lleva «descartado»: es lo que permite contar el ruido con un grep del log.
+        assert!(body["motivo"].as_str().unwrap_or_default().contains("descartado"));
+    }
+
+    #[tokio::test]
+    async fn el_parcial_en_movimiento_no_dibuja_y_con_la_pausa_si() {
+        // Cambió hace 60 ms: todavía se está transcribiendo.
+        let (_, body) = pedir(json!({
+            "texto": "quiero un nodo", "anterior": "quiero un", "ms_desde_cambio": 60
+        }))
+        .await;
+        assert_eq!(body["clase"], "nada");
+
+        // La misma frase, 400 ms sin cambios: la persona hizo una pausa y el fantasma aparece.
+        let (_, body) = pedir(json!({
+            "texto": "quiero un nodo", "anterior": "quiero un", "ms_desde_cambio": 400
+        }))
+        .await;
+        assert_eq!(body["clase"], "semilla");
     }
 }
