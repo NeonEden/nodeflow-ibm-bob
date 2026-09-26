@@ -1,126 +1,97 @@
 import { describe, expect, it } from 'vitest';
-import {
-  buildChain,
-  isDraftId,
-  filterOutDrafts,
-  filterOutDraftEdges,
-  materializeChain,
-  discardChain,
-  PREFIX_BORRADOR,
-} from './cadenaVoz';
-import { OFFSET_FANTASMA } from './draftVoz';
+import { construirCadena, idDeTema, PREFIX_CADENA } from './cadenaVoz';
 
-describe('cadenaVoz — Lógica de la cadena de temas dictados', () => {
-  const anchorId = 'nodo-raiz';
-  const anchorPos = { position: { x: 100, y: 100 } };
+/**
+ * Pedido 06: al cerrar el turno, cada tema del dictado se crea como un NODO REAL del grafo,
+ * encadenado desde el ancla. Ya no hay borradores que esperan confirmación (eso era el 05).
+ */
+describe('cadenaVoz — la cadena del dictado nace como nodos reales', () => {
+  const ancla = 'nodo-raiz';
+  const posiciones = [
+    { x: 400, y: 100 },
+    { x: 700, y: 100 },
+    { x: 1000, y: 100 },
+    { x: 1300, y: 100 },
+  ];
   const turno = 123;
+  const temas = [
+    { titulo: 'T1', texto: 'D1' },
+    { titulo: 'T2', texto: 'D2' },
+    { titulo: 'T3', texto: 'D3' },
+    { titulo: 'T4', texto: 'D4' },
+  ];
 
-  it('1. 1 tema -> 1 borrador colgando del ancla', () => {
-    const temas = [{ titulo: 'Tema 1', texto: 'Contenido 1' }];
-    const { nodes, edges } = buildChain(temas, anchorId, anchorPos, turno);
+  it('1. un tema -> un nodo colgando del ancla, con el titulo y el texto del tema', () => {
+    const { nodes, edges } = construirCadena([temas[0]], posiciones, ancla, turno);
 
     expect(nodes).toHaveLength(1);
     expect(edges).toHaveLength(1);
-
-    expect(nodes[0].id).toBe(`${PREFIX_BORRADOR}${turno}-1`);
-    expect(nodes[0].data.title).toBe('Tema 1');
-    expect(nodes[0].position).toEqual({
-      x: 100 + OFFSET_FANTASMA,
-      y: 100 + OFFSET_FANTASMA,
-    });
-
-    expect(edges[0].source).toBe(anchorId);
+    expect(nodes[0].id).toBe(idDeTema(turno, 0));
+    expect(nodes[0].id).toBe(`${PREFIX_CADENA}${turno}-1`);
+    expect(nodes[0].data.title).toBe('T1');
+    expect(nodes[0].data.description).toBe('D1');
+    expect(edges[0].source).toBe(ancla);
     expect(edges[0].target).toBe(nodes[0].id);
   });
 
-  it('2. 4 temas -> 4 borradores encadenados en el orden dictado (ancla -> 1 -> 2 -> 3 -> 4)', () => {
-    const temas = [
-      { titulo: 'T1', texto: 'D1' },
-      { titulo: 'T2', texto: 'D2' },
-      { titulo: 'T3', texto: 'D3' },
-      { titulo: 'T4', texto: 'D4' },
-    ];
-    const { nodes, edges } = buildChain(temas, anchorId, anchorPos, turno);
+  it('2. cuatro temas -> cuatro nodos encadenados en el orden dictado (ancla -> 1 -> 2 -> 3 -> 4)', () => {
+    const { nodes, edges } = construirCadena(temas, posiciones, ancla, turno);
 
     expect(nodes).toHaveLength(4);
     expect(edges).toHaveLength(4);
 
-    // Verificación de la cadena
-    expect(edges[0].source).toBe(anchorId);
+    expect(edges[0].source).toBe(ancla);
     expect(edges[0].target).toBe(nodes[0].id);
-
     expect(edges[1].source).toBe(nodes[0].id);
     expect(edges[1].target).toBe(nodes[1].id);
-
     expect(edges[2].source).toBe(nodes[1].id);
     expect(edges[2].target).toBe(nodes[2].id);
-
     expect(edges[3].source).toBe(nodes[2].id);
     expect(edges[3].target).toBe(nodes[3].id);
 
-    // Posiciones incrementales
-    expect(nodes[3].position).toEqual({
-      x: 100 + 4 * OFFSET_FANTASMA,
-      y: 100 + 4 * OFFSET_FANTASMA,
+    // El orden dictado manda: el primero es el primer tema.
+    expect(nodes.map((n) => n.data.title)).toEqual(['T1', 'T2', 'T3', 'T4']);
+  });
+
+  it('3. cada nodo cae donde le dijo ubicarCadena (no apilados) y no es un fantasma', () => {
+    const { nodes } = construirCadena(temas, posiciones, ancla, turno);
+
+    nodes.forEach((n, i) => {
+      expect(n.position).toEqual(posiciones[i]);
+      // Nada de `ghost`: son nodos del grafo (el fantasma es sólo el preview del parcial en vivo).
+      expect((n.data as Record<string, unknown>).ghost).toBeUndefined();
+      expect(n.type).toBe('ideaNode');
     });
+    // Y ninguna posicion se repite: el defecto que reporto el usuario era verlos uno encima del otro.
+    const claves = nodes.map((n) => `${n.position.x},${n.position.y}`);
+    expect(new Set(claves).size).toBe(nodes.length);
   });
 
-  it('3. los ids son nf-borrador-<turno>-<i> y no colisionan entre turnos distintos', () => {
-    const temas = [{ titulo: 'T', texto: 'D' }];
-    const res1 = buildChain(temas, anchorId, anchorPos, 'turnoA');
-    const res2 = buildChain(temas, anchorId, anchorPos, 'turnoB');
+  it('4. los ids llevan el turno y no colisionan entre turnos distintos', () => {
+    const a = construirCadena(temas, posiciones, ancla, 'turnoA').nodes;
+    const b = construirCadena(temas, posiciones, ancla, 'turnoB').nodes;
 
-    expect(res1.nodes[0].id).toBe(`${PREFIX_BORRADOR}turnoA-1`);
-    expect(res2.nodes[0].id).toBe(`${PREFIX_BORRADOR}turnoB-1`);
-    expect(res1.nodes[0].id).not.toBe(res2.nodes[0].id);
+    expect(a[0].id).toBe(`${PREFIX_CADENA}turnoA-1`);
+    expect(b[0].id).toBe(`${PREFIX_CADENA}turnoB-1`);
+    expect(a[0].id).not.toBe(b[0].id);
+    // IDs unicos dentro del mismo turno
+    expect(new Set(a.map((n) => n.id)).size).toBe(4);
   });
 
-  it('4. el filtro saca los borradores de nodos Y de aristas; y un nodo real cuyo TITULO empiece con nf-borrador NO se filtra', () => {
-    const nodes = [
-      { id: 'nodo-real', data: { title: 'nf-borrador-falso' } },
-      { id: `${PREFIX_BORRADOR}123-1`, data: { title: 'Borrador' } },
-    ] as any;
+  it('5. sin ancla el primero queda suelto y el resto se encadena igual', () => {
+    const { nodes, edges } = construirCadena(temas, posiciones, null, turno);
 
-    const edges = [
-      { id: 'edge-real', source: 'a', target: 'b' },
-      { id: `edge-${PREFIX_BORRADOR}123-1`, source: 'nodo-real', target: `${PREFIX_BORRADOR}123-1` },
-    ] as any;
-
-    const filteredNodes = filterOutDrafts(nodes);
-    const filteredEdges = filterOutDraftEdges(edges);
-
-    expect(filteredNodes).toHaveLength(1);
-    expect(filteredNodes[0].id).toBe('nodo-real');
-
-    expect(filteredEdges).toHaveLength(1);
-    expect(filteredEdges[0].id).toBe('edge-real');
+    expect(nodes).toHaveLength(4);
+    // 3 aristas: 1->2, 2->3, 3->4 (la primera al ancla no existe porque no hay ancla)
+    expect(edges).toHaveLength(3);
+    expect(edges[0].source).toBe(nodes[0].id);
+    expect(edges[0].target).toBe(nodes[1].id);
   });
 
-  it('5. confirmar materializa todos los temas con sus titulos; descartar limpia todo y no deja aristas huerfanas', () => {
-    const temas = [{ titulo: 'T1', texto: 'D1' }];
-    const { nodes, edges } = buildChain(temas, anchorId, anchorPos, turno);
-
-    // Confirmar
-    const { nodes: confirmedNodes, edges: confirmedEdges } = materializeChain(nodes, edges, turno);
-    expect(confirmedNodes[0].id).toBe(`n-${turno}-1`);
-    expect(confirmedNodes[0].data.ghost).toBe(false);
-    expect(confirmedEdges[0].id).toBe(`e-${turno}-1`);
-    expect(confirmedEdges[0].target).toBe(confirmedNodes[0].id);
-    expect(isDraftId(confirmedNodes[0].id)).toBe(false);
-
-    // Descartar
-    const { nodes: emptyNodes, edges: emptyEdges } = discardChain(nodes, edges, turno);
-    expect(emptyNodes).toHaveLength(0);
-    expect(emptyEdges).toHaveLength(0);
-  });
-
-  it('6. temas ausente o vacio -> no se dibuja nada', () => {
-    const res1 = buildChain([], anchorId, anchorPos, turno);
-    const res2 = buildChain(null as any, anchorId, anchorPos, turno);
-    const res3 = buildChain(undefined, anchorId, anchorPos, turno);
-
-    expect(res1.nodes).toHaveLength(0);
-    expect(res2.nodes).toHaveLength(0);
-    expect(res3.nodes).toHaveLength(0);
+  it('6. sin temas (vacio, null o undefined) no se crea nada', () => {
+    expect(construirCadena([], posiciones, ancla, turno).nodes).toHaveLength(0);
+    expect(construirCadena(null, posiciones, ancla, turno).nodes).toHaveLength(0);
+    expect(construirCadena(undefined, posiciones, ancla, turno).nodes).toHaveLength(0);
+    expect(construirCadena([], posiciones, ancla, turno).edges).toHaveLength(0);
   });
 });

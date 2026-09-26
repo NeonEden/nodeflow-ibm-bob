@@ -67,6 +67,8 @@ import { AparienciaHud } from './components/AparienciaHud';
 import { calcularNiveles, acentoDeNivel } from './utils/zonas';
 import { firmaLienzo, nombreDeSesion } from './utils/sesiones';
 import { CLASE_FANTASMA, esIdeaEnVivo, ID_FANTASMA, nodoFantasma } from './utils/draftVoz';
+import { construirCadena } from './utils/cadenaVoz';
+import { ubicarCadena } from './utils/ubicarCadena';
 import {
   listarSesiones,
   leerSesion,
@@ -4798,6 +4800,32 @@ export default function App() {
         onTurnoCerrado={() => {
           setDraftVoz('');
           setDecisionParcial(undefined);
+        }}
+        // Pedido 06: al cerrar el turno, los temas del dictado se crean como NODOS REALES del grafo,
+        // encadenados desde el ancla. Sin aprobación previa: el error se revierte con Ctrl+Z.
+        // Por qué acá y no en `onTurnoCerrado`: ése se dispara al cortar el turno en el motor, antes de
+        // que el segmentador juzgue el texto completo; los temas llegan recién con la decisión final.
+        onTurnoFinal={(temas) => {
+          if (!temas?.length) return;
+          const turno = Date.now();
+          const ancla = nodes.find((n) => n.data.isRoot) ?? nodes[0] ?? null;
+          // `ubicarCadena` evita el defecto medido: antes la cadena caía con un offset acumulado en
+          // diagonal y los nodos terminaban uno encima del otro (y del ancla).
+          const posiciones = ubicarCadena(nodes, ancla?.position ?? { x: 80, y: 80 }, temas.length);
+          const { nodes: nuevos, edges: nuevas } = construirCadena(
+            temas,
+            posiciones,
+            ancla?.id ?? null,
+            turno
+          );
+          // Snapshot ANTES de mutar (patrón del repo): deja el estado actual en la pila del undo, que es
+          // lo que hace que Ctrl+Z revierta la creación entera.
+          takeSnapshot(nodes, edges);
+          setNodes((nds) => [
+            ...nds.filter((n) => n.id !== ID_FANTASMA),
+            ...(nuevos as unknown as CustomNode[]),
+          ]);
+          setEdges((eds) => [...eds, ...nuevas]);
         }}
       />
 
