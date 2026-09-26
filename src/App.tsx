@@ -99,6 +99,8 @@ import { useIdioma } from './i18n/useIdioma';
 import { HitlLearningModal } from './components/HitlLearningModal';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { ApiKeyModal } from './components/ApiKeyModal';
+import { WelcomeModal } from './components/WelcomeModal';
+import { debeMostrarOnboarding, marcarOnboardingVisto, type Almacen } from './utils/primerVisita';
 import { BrainDumpModal } from './components/BrainDumpModal';
 import { SemanticBridgesModal } from './components/SemanticBridgesModal';
 import { postAiAction } from './services/aiApi';
@@ -288,7 +290,34 @@ export default function App() {
   const [isSynthesisLoading, setIsSynthesisLoading] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
-  const [isWelcomeOpen, setIsWelcomeOpen] = useState(true);
+  // El almacén que usa la bienvenida para recordar que ya se vio. Si el navegador lo bloquea, la pieza
+  // de `primerVisita` decide mostrar igual: es peor no explicar nada que repetir la bienvenida.
+  const almacenOnboarding: Almacen = {
+    leer: (k) => {
+      try {
+        return localStorage.getItem(k);
+      } catch {
+        return null;
+      }
+    },
+    escribir: (k, v) => {
+      try {
+        localStorage.setItem(k, v);
+      } catch {
+        /* sin persistencia: la bienvenida se verá otra vez */
+      }
+    },
+  };
+  // La bienvenida se muestra la primera vez que se abre la app (y después sólo si el usuario la pide).
+  // Antes estaba en `true` fijo y **el modal no se montaba en ninguna parte**: la app abría en un lienzo
+  // vacío sin una frase que explicara qué hacer (26/09/2026).
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
+  // Qué clave abre el modal de claves: los agentes de IA o el dictado (`assemblyai_api_key`).
+  const [apiKeyVariante, setApiKeyVariante] = useState<'ia' | 'voz'>('ia');
+  useEffect(() => {
+    setIsWelcomeOpen(debeMostrarOnboarding(almacenOnboarding, false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [hasCustomApiKey, setHasCustomApiKey] = useState(() => {
     try {
       return !!(localStorage.getItem('user_gemini_api_key') || '').trim();
@@ -4973,13 +5002,45 @@ export default function App() {
       <KeyboardShortcutsModal
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
+        onOpenWelcome={() => {
+          setIsShortcutsOpen(false);
+          setIsWelcomeOpen(true);
+        }}
       />
 
-      {/* Bring Your Own Key (BYOK) Modal */}
+      {/* Bienvenida: qué es NodeFlow, el atajo para dictar y dónde van las dos claves. */}
+      <WelcomeModal
+        isOpen={isWelcomeOpen}
+        onClose={() => {
+          setIsWelcomeOpen(false);
+          marcarOnboardingVisto(almacenOnboarding);
+        }}
+        onOpenAiConfig={() => {
+          setApiKeyVariante('ia');
+          setIsWelcomeOpen(false);
+          marcarOnboardingVisto(almacenOnboarding);
+          setIsApiKeyModalOpen(true);
+        }}
+        onOpenVoiceConfig={() => {
+          setApiKeyVariante('voz');
+          setIsWelcomeOpen(false);
+          marcarOnboardingVisto(almacenOnboarding);
+          setIsApiKeyModalOpen(true);
+        }}
+        onOpenShortcuts={() => {
+          setIsWelcomeOpen(false);
+          marcarOnboardingVisto(almacenOnboarding);
+          setIsShortcutsOpen(true);
+        }}
+      />
+
+      {/* Bring Your Own Key (BYOK) Modal: la misma UI para la clave de IA y la del dictado. */}
       <ApiKeyModal
         isOpen={isApiKeyModalOpen}
         onClose={() => setIsApiKeyModalOpen(false)}
         onKeyChange={(hasKey) => setHasCustomApiKey(hasKey)}
+        campo={apiKeyVariante === 'voz' ? 'assemblyai_api_key' : 'gemini_api_key'}
+        variante={apiKeyVariante}
       />
 
       {/* Brain Dump Rapid Input Modal */}

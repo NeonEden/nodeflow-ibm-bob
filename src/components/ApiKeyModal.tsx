@@ -7,6 +7,14 @@ interface ApiKeyModalProps {
   isOpen: boolean;
   onClose: () => void;
   onKeyChange: (hasKey: boolean) => void;
+  /**
+   * Campo del backend donde se guarda la clave. El onboarding abre este mismo modal para las dos:
+   * `gemini_api_key` (los agentes de IA) y `assemblyai_api_key` (el dictado). El backend ya conoce los
+   * dos (`src-tauri/src/claves.rs`), así que no hace falta un modal nuevo para la voz.
+   */
+  campo?: string;
+  /** De dónde se saca la clave y qué textos mostrar. */
+  variante?: 'ia' | 'voz';
 }
 
 interface ClaveEstado {
@@ -20,7 +28,13 @@ interface ClavesEstadoResponse {
   campos: ClaveEstado[];
 }
 
-export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKeyChange }) => {
+export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
+  isOpen,
+  onClose,
+  onKeyChange,
+  campo = 'gemini_api_key',
+  variante = 'ia',
+}) => {
   const { t } = useIdioma();
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
@@ -33,14 +47,14 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
       const res = await fetch(apiUrl('/api/claves/estado'));
       if (res.ok) {
         const data: ClavesEstadoResponse = await res.json();
-        const geminiKey = data.campos.find(c => c.campo === 'gemini_api_key');
+        const geminiKey = data.campos.find(c => c.campo === campo);
         const hasKey = geminiKey && geminiKey.origen !== 'ausente';
         setHasSavedKey(!!hasKey);
         onKeyChange(!!hasKey);
       }
     } catch {
       // Fallback: try localStorage
-      const stored = localStorage.getItem('user_gemini_api_key') || '';
+      const stored = localStorage.getItem(`user_${campo}`) || '';
       setHasSavedKey(!!stored.trim());
       onKeyChange(!!stored.trim());
     }
@@ -48,7 +62,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
 
   useEffect(() => {
     if (isOpen) {
-      const stored = localStorage.getItem('user_gemini_api_key') || '';
+      const stored = localStorage.getItem(`user_${campo}`) || '';
       setApiKey(stored);
       setSaveSuccess(false);
       checkSavedKey();
@@ -66,20 +80,20 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
         const res = await fetch(apiUrl('/api/claves'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ campo: 'gemini_api_key', valor: trimmed }),
+          body: JSON.stringify({ campo: campo, valor: trimmed }),
         });
         if (!res.ok) throw new Error('Error al guardar');
-        localStorage.setItem('user_gemini_api_key', trimmed);
+        localStorage.setItem(`user_${campo}`, trimmed);
         setHasSavedKey(true);
         onKeyChange(true);
       } else {
         const res = await fetch(apiUrl('/api/claves'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ campo: 'gemini_api_key', borrar: true }),
+          body: JSON.stringify({ campo: campo, borrar: true }),
         });
         if (!res.ok) throw new Error('Error al borrar');
-        localStorage.removeItem('user_gemini_api_key');
+        localStorage.removeItem(`user_${campo}`);
         setHasSavedKey(false);
         onKeyChange(false);
       }
@@ -101,10 +115,10 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
       const res = await fetch(apiUrl('/api/claves'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campo: 'gemini_api_key', borrar: true }),
+        body: JSON.stringify({ campo: campo, borrar: true }),
       });
       if (!res.ok) throw new Error('Error al borrar');
-      localStorage.removeItem('user_gemini_api_key');
+      localStorage.removeItem(`user_${campo}`);
       setApiKey('');
       setHasSavedKey(false);
       onKeyChange(false);
@@ -140,14 +154,14 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
             <div>
               <div className="flex items-center gap-2">
                 <h2 id="api-key-modal-title" className="text-base font-bold text-white">
-                  {t('apikey.titulo')}
+                  {t(variante === 'voz' ? 'apikey.voz.titulo' : 'apikey.titulo')}
                 </h2>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-mono border border-emerald-500/20">
                   {t('apikey.opcional')}
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                {t('apikey.descripcion')}
+                {t(variante === 'voz' ? 'apikey.voz.descripcion' : 'apikey.descripcion')}
               </p>
             </div>
           </div>
@@ -198,7 +212,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
                 type={showKey ? 'text' : 'password'}
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="AIzaSy..."
+                placeholder={variante === 'voz' ? '32 caracteres hex...' : 'AIzaSy...'}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono"
                 autoComplete="off"
                 spellCheck="false"
@@ -208,7 +222,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
             <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
               <span>{t('apikey.sinClave')}</span>
               <a
-                href="https://aistudio.google.com/app/apikey"
+                href={variante === 'voz' ? 'https://www.assemblyai.com/dashboard/signup' : 'https://aistudio.google.com/app/apikey'}
                 target="_blank"
                 rel="noreferrer"
                 className="text-emerald-400 hover:text-emerald-300 inline-flex items-center gap-1 hover:underline"

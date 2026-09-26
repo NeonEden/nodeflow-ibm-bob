@@ -190,9 +190,12 @@ const CATEGORIES = [
 interface KeyboardShortcutsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Reabre la bienvenida: si se vio una vez y se cerró, éste es el camino de vuelta. */
+  onOpenWelcome?: () => void;
 }
 
 export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
+  onOpenWelcome,
   isOpen,
   onClose,
 }) => {
@@ -353,13 +356,24 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
             <HelpCircle size={13} className="text-indigo-400" />
             <span>Puedes presionar <kbd className="px-1.5 py-0.5 bg-slate-900 border border-slate-700 rounded font-mono text-indigo-300">?</kbd> en cualquier momento para abrir o cerrar esta ventana.</span>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-          >
-            Cerrar (Esc)
-          </button>
+          <div className="flex items-center gap-2">
+            {onOpenWelcome && (
+              <button
+                type="button"
+                onClick={onOpenWelcome}
+                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+              >
+                Ver la bienvenida
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+            >
+              Cerrar (Esc)
+            </button>
+          </div>
         </div>
       </div>
     </div>
