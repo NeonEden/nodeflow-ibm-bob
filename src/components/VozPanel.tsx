@@ -884,6 +884,11 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
       return;
     }
 
+    // El turno ya cerro: el microfono NO esta escuchando. Dejar el estado en 'escuchando' mientras el motor
+    // arma el plan era la otra mitad del bucle del 26/09 (el guard de `cortar()` no tocaba el estado y el
+    // atajo veia «mic encendido» para siempre). Los caminos del modo conversacion salen por `return` antes de
+    // aca, asi que siguen dejando el panel escuchando como corresponde.
+    setEstado('inactivo');
     setPensando(true);
     try {
       const { plan: p, modelo, uso } = await pedirPlanVoz(dictado);
@@ -954,8 +959,11 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
     const turnoYaCerrado = turnoUltimoCierreRef.current === turnoRef.current;
     if (pedidoExterno.accion === 'empezar') {
       const accion = decidirAtajo({ fase: 'pressed', estado, msDesdePressed: 0, turnoYaCerrado });
+      // El timestamp se actualiza SIEMPRE, no solo al abrir: si el pressed se ignora (sesion conectando o
+      // cerrando) y no se toca, un `released` posterior se mide contra un toque viejo y puede cortar un turno
+      // en curso. Lo encontro la auditoria independiente del 26/09/2026.
+      atajoPresadoRef.current = performance.now();
       if (accion === 'abrir') {
-        atajoPresadoRef.current = performance.now();
         void empezarRef.current?.('atajo');
       } else if (accion === 'ignorar') {
         trazaVoz('atajo.ignorado', { turno: turnoRef.current, estado });
