@@ -17,6 +17,14 @@ Este repositorio se migró desde el repo de trabajo el **26/09/2026**: qué entr
 qué está en [`docs/hackathon/MIGRACION.md`](docs/hackathon/MIGRACION.md). Estado y plan vigente:
 [`docs/PLAN-LIENZO-EN-VIVO.md`](docs/PLAN-LIENZO-EN-VIVO.md).
 
+## Probarlo en 10 segundos
+
+**[▶ Abrir el demo web](https://nodeflow-ibm-bob.vercel.app)** — se abre en el navegador, sin instalar nada y
+sin pedir login. Muestra la interfaz real con un flujo de voz **simulado** (datos de ejemplo).
+
+Para la app de verdad —la que escucha tu voz— o para correr el demo en tu máquina:
+[`docs/COMO-PROBAR.md`](docs/COMO-PROBAR.md).
+
 ## Cómo se corre y cómo se verifica
 
 | Para qué | Comando |
