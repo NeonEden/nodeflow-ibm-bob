@@ -2231,8 +2231,16 @@ async fn call_model(
             // Estamos en la red de seguridad: quedó registrado para poder medirlo después.
             log::info!("ruteo: {} no alcanzó, sigo con {}", tarea.etiqueta(), m.id);
         }
-        match call_provider_cached(st, key, &m, prompt, schema, system, nodo, sin_cache, semilla).await {
-            Some(llamada) if exigir.map(|sirve| sirve(&llamada.valor, nested)).unwrap_or(true) => {
+        match call_provider_cached(
+            st, key, &m, prompt, schema, system, nodo, sin_cache, semilla,
+        )
+        .await
+        {
+            Some(llamada)
+                if exigir
+                    .map(|sirve| sirve(&llamada.valor, nested))
+                    .unwrap_or(true) =>
+            {
                 return Some(llamada)
             }
             // Contestó, pero con algo que no le sirve a nadie: se sigue en vez de devolverlo. Es el caso
@@ -2950,7 +2958,11 @@ async fn claves_migrar(State(st): State<AppState>) -> impl IntoResponse {
 /// Responde: `{ "ok": true, "campo": "...", "origen": "llavero", "huella": "...", "largo": N }`.
 /// Nunca devuelve el valor. Rechaza con 400 si el campo no pasa `claves::es_campo_de_clave`.
 async fn claves_guardar(Json(body): Json<Value>) -> impl IntoResponse {
-    let campo = body.get("campo").and_then(|v| v.as_str()).unwrap_or("").trim();
+    let campo = body
+        .get("campo")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
     if campo.is_empty() || !crate::claves::es_campo_de_clave(campo) {
         return (
             StatusCode::BAD_REQUEST,
@@ -2958,7 +2970,10 @@ async fn claves_guardar(Json(body): Json<Value>) -> impl IntoResponse {
         );
     }
 
-    let borrar = body.get("borrar").and_then(|v| v.as_bool()).unwrap_or(false);
+    let borrar = body
+        .get("borrar")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     if borrar {
         match crate::claves::Store::borrar(&crate::claves::Llavero, campo) {
@@ -2978,7 +2993,11 @@ async fn claves_guardar(Json(body): Json<Value>) -> impl IntoResponse {
             ),
         }
     } else {
-        let valor = body.get("valor").and_then(|v| v.as_str()).unwrap_or("").trim();
+        let valor = body
+            .get("valor")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim();
         if valor.is_empty() {
             return (
                 StatusCode::BAD_REQUEST,
@@ -3231,6 +3250,7 @@ async fn voz_parcial(Json(body): Json<Value>) -> impl IntoResponse {
             "motivo": dec.motivo,
             "titulo": dec.titulo,
             "texto": dec.texto,
+            "temas": dec.temas,
         })),
     )
 }
@@ -6169,7 +6189,10 @@ mod tests_traza_voz {
     #[test]
     fn una_traza_es_una_sola_linea_con_prefijo_contable() {
         let l = linea_traza("turno.cerrado", "turno=3 fuente=ForceEndpoint ms=1810");
-        assert_eq!(l, "voz(ui) turno.cerrado turno=3 fuente=ForceEndpoint ms=1810");
+        assert_eq!(
+            l,
+            "voz(ui) turno.cerrado turno=3 fuente=ForceEndpoint ms=1810"
+        );
         assert!(!l.contains('\n'));
     }
 
@@ -6178,10 +6201,17 @@ mod tests_traza_voz {
     #[test]
     fn los_saltos_de_linea_y_el_texto_largo_se_recortan() {
         let l = linea_traza("error\nimportante", "mensaje=nada\r\n\nseguimos");
-        assert!(l.starts_with("voz(ui) error importante mensaje=nada"), "{l}");
+        assert!(
+            l.starts_with("voz(ui) error importante mensaje=nada"),
+            "{l}"
+        );
         assert_eq!(l.lines().count(), 1);
         let largo = linea_traza("error", &"x".repeat(1000));
-        assert!(largo.len() < 260, "la traza no se recortó: {} chars", largo.len());
+        assert!(
+            largo.len() < 260,
+            "la traza no se recortó: {} chars",
+            largo.len()
+        );
     }
 
     /// Un evento vacío no es una traza: el handler lo rechaza (400) en vez de escribir una línea sin sentido.
@@ -6234,8 +6264,13 @@ mod tests_voz_parcial {
     async fn pedir(cuerpo: Value) -> (StatusCode, Value) {
         let res = voz_parcial(Json(cuerpo)).await.into_response();
         let status = res.status();
-        let bytes = to_bytes(res.into_body(), 1 << 20).await.expect("cuerpo de la respuesta");
-        (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+        let bytes = to_bytes(res.into_body(), 1 << 20)
+            .await
+            .expect("cuerpo de la respuesta");
+        (
+            status,
+            serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+        )
     }
 
     #[tokio::test]
@@ -6247,14 +6282,21 @@ mod tests_voz_parcial {
 
     #[tokio::test]
     async fn turno_cerrado_devuelve_semilla_con_el_contrato_completo() {
-        let (status, body) = pedir(json!({ "texto": "  quiero un sintetizador  ", "es_final": true })).await;
+        let (status, body) =
+            pedir(json!({ "texto": "  quiero un sintetizador  ", "es_final": true })).await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["clase"], "semilla");
         // El texto sale recortado (es lo que se dibuja), pero sin cambiar el contenido.
         assert_eq!(body["texto"], "quiero un sintetizador");
-        assert!(body["motivo"].as_str().unwrap_or_default().contains("3 palabras"));
+        assert!(body["motivo"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("3 palabras"));
         // El contrato declara la clave aun cuando el título lo arma el cliente.
-        assert!(body.get("titulo").is_some(), "la clave `titulo` tiene que viajar siempre");
+        assert!(
+            body.get("titulo").is_some(),
+            "la clave `titulo` tiene que viajar siempre"
+        );
     }
 
     #[tokio::test]
@@ -6269,7 +6311,10 @@ mod tests_voz_parcial {
         let (_, body) = pedir(json!({ "texto": "hola mundo" })).await;
         assert_eq!(body["clase"], "nada");
         // El motivo lleva «descartado»: es lo que permite contar el ruido con un grep del log.
-        assert!(body["motivo"].as_str().unwrap_or_default().contains("descartado"));
+        assert!(body["motivo"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("descartado"));
     }
 
     #[tokio::test]
