@@ -5,6 +5,7 @@ import { decidirAtajo } from '../utils/toggleVoz';
 import { crearClienteStt, type ClienteStt } from '../services/sttRt';
 import { apiUrl } from '../services/apiBase';
 import { trazaVoz } from '../services/trazaVoz';
+import type { FaseTurno } from '../utils/borradorVivo';
 import { getVozEstado, getVozJwt, pedirPlanVoz, describirComando, decir, hablarConElSistema, clasificarParcial, msQuieto, MS_ESTABILIDAD_CLIENTE, MS_UMBRAL_TOGGLE, ErrorOcupado, VozEstado, PlanVoz, VozComando } from '../services/vozService';
 import { useIdioma } from '../i18n/useIdioma';
 import { esAfirmativo, planEsConsulta } from '../utils/voz';
@@ -69,6 +70,13 @@ interface VozPanelProps {
    * turno tiene el texto completo.
    */
   onTurnoFinal?: (temas: { titulo: string; texto: string }[] | null) => void;
+  /**
+   * La fase del turno, para que el lienzo sepa si el borrador sigue vivo. Es parte del minimo que salio
+   * de la sesion de diseno con gpt-6-astra (26/09/2026): mientras la fase sea `resolviendo` (el turno ya
+   * cerro y el segmentador esta decidiendo), el lienzo no dibuja ni conserva el borrador — asi un parcial
+   * tardio no puede resucitar un nodo fijo al lado del real.
+   */
+  onFaseTurno?: (fase: FaseTurno) => void;
 }
 
 /** Id corto de sesión de STT: sólo sirve para correlacionar y contar las trazas del log. */
@@ -105,7 +113,7 @@ const EJEMPLOS = [
  * Panel de Voz (Speechmatics). Hablás, la transcripción aparece en vivo y al cortar el motor
  * propone un PLAN de operaciones sobre el lienzo — que se aprueba antes de aplicarse.
  */
-export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, onPrevisualizar, onAplicarComandos, tituloNodo, preguntaAbierta, onResponder, onInicioConversacion, onTurnoConversacion, pedidoExterno, onParcialVivo, onDecisionParcial, onTurnoCerrado, onTurnoFinal }) => {
+export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, onPrevisualizar, onAplicarComandos, tituloNodo, preguntaAbierta, onResponder, onInicioConversacion, onTurnoConversacion, pedidoExterno, onParcialVivo, onDecisionParcial, onTurnoCerrado, onTurnoFinal, onFaseTurno }) => {
   // Textos del panel en el idioma activo. La voz (entrada y salida) sigue el mismo idioma desde el
   // backend, así que acá sólo se traduce la interfaz.
   const { t } = useIdioma();
@@ -535,9 +543,18 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
   /** El atajo pidió cortar mientras `empezar()` todavía estaba abriendo la sesión. */
   const cancelarRef = useRef(false);
 
+  /** La fase del turno. El ref es lo que leen los callbacks async; el aviso es lo que ve el lienzo. */
+  const faseTurnoRef = useRef<FaseTurno>('inactivo');
+  const avisarFase = (f: FaseTurno) => {
+    faseTurnoRef.current = f;
+    onFaseTurno?.(f);
+  };
+
   const empezar = async (origen: 'ui' | 'atajo' | 'conv' = 'ui') => {
     // Cada pedido abre un turno numerado: es lo que después se cuenta en el log.
     turnoRef.current += 1;
+    // Un turno nuevo devuelve el lienzo a 'escuchando': es la unica salida de 'resolviendo'.
+    avisarFase('escuchando');
     t0PedidoRef.current = performance.now();
     primerParcialRef.current = false;
     trazaVoz('pedido', { turno: turnoRef.current, origen, sesion_viva: Boolean(rtRef.current?.viva) });
@@ -606,6 +623,11 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
         }).then((decision) => {
           // Respuesta stale: si el texto ya cambió, esta decisión habla de una frase vieja.
           if (!esFinal && textoEnVueloRef.current !== texto) return;
+          // Y una decisión de un turno YA CERRADO no toca el lienzo, sea `es_final` o no: su texto pertenece
+          // a los temas que están por materializarse (o ya se materializaron). Antes sólo los parciales
+          // pasaban por este control, así que una `es_final` que llegaba tarde resucitaba el borrador como
+          // nodo fijo al lado del real. Es la carrera que reportó el usuario el 26/09/2026.
+          if (faseTurnoRef.current === 'resolviendo') return;
           onDecisionParcial?.(decision);
         });
       };
@@ -764,6 +786,9 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
     if (!reusa) cerrarSesion('sin_reuso');
     setParcial('');
     onTurnoCerrado?.(); // el turno cerró: el borrador del lienzo se retira
+    // El turno pasa a 'resolviendo' (pegajoso): el lienzo deja de dibujar y de conservar el borrador hasta
+    // que empiece un turno nuevo. Ahi cae la carrera del parcial tardio que reporto el usuario (26/09/2026).
+    avisarFase('resolviendo');
     setTexto(dictado);
     // Cierre vacío o con < 3 palabras: no molestar al motor. La traza queda para medirlo.
     // Un cierre con dos palabras no es un error del usuario: no se muestra error visible.

@@ -67,6 +67,7 @@ import { AparienciaHud } from './components/AparienciaHud';
 import { calcularNiveles, acentoDeNivel } from './utils/zonas';
 import { firmaLienzo, nombreDeSesion } from './utils/sesiones';
 import { CLASE_FANTASMA, esIdeaEnVivo, ID_FANTASMA, nodoFantasma } from './utils/draftVoz';
+import { decidirBorrador, type FaseTurno } from './utils/borradorVivo';
 import { construirCadena } from './utils/cadenaVoz';
 import { ubicarCadena } from './utils/ubicarCadena';
 import {
@@ -257,6 +258,12 @@ export default function App() {
    * dibuja marcando el ghost, y `nada` retira el fantasma.
    */
   const [decisionParcial, setDecisionParcial] = useState<DecisionParcial | null | undefined>(undefined);
+  /**
+   * La fase del turno de voz, que informa el panel (ver `decidirBorrador`). `resolviendo` es pegajoso: no
+   * se sale hasta que empiece un turno nuevo. Es el mínimo que salió de la sesión de diseño con
+   * gpt-6-astra (26/09/2026) para cortar la carrera del borrador que resucitaba como nodo fijo.
+   */
+  const [faseTurno, setFaseTurno] = useState<FaseTurno>('inactivo');
 
   // 2. Selection & Modal States
   const [selectedNodes, setSelectedNodes] = useState<CustomNode[]>([]);
@@ -642,69 +649,50 @@ export default function App() {
     const timer = setTimeout(() => {
       setNodes((nds) => {
         const sinFantasma = nds.filter((n) => n.id !== ID_FANTASMA);
-
-        // ── Decisión del segmentador (Fase C) ────────────────────────────────────────────────────
-        // Si `decisionParcial` no es `undefined`, el backend contestó: usamos su veredicto.
-        // Si es `undefined` (no hay backend o es la primera vez), caemos a la regla local.
-        //
-        // `null` significa que el backend no contestó a tiempo: misma ruta que `undefined` → local.
         const hayFantasmaActual = nds.some((n) => n.id === ID_FANTASMA);
 
-        if (decisionParcial !== undefined) {
-          // `nada` o `null` (backend ausente/lento): NO borrar un fantasma que ya está dibujado.
-          // Regla del 26/09/2026: los parciales intermedios del turno contestan «nada» porque el texto
-          // aún no es estable. Si cada «nada» borrara el fantasma, aparece/desaparece constantemente.
-          // El fantasma sólo se retira cuando el turno muere sin parciales (onTurnoCerrado).
-          if (decisionParcial === null || decisionParcial.clase === 'nada') {
-            if (hayFantasmaActual) {
-              // Ya hay fantasma: no lo tocamos. El «nada» es del segmentador para el parcial actual,
-              // no una orden de borrar.
-              return nds;
-            }
-            // Sin fantasma todavía: cae a la regla local (puede que la idea aún no llegó al umbral).
-            if (!esIdeaEnVivo(draftVoz)) {
-              return sinFantasma.length === nds.length ? nds : sinFantasma;
-            }
-            const ancla =
-              nds.find((n) => n.id !== ID_FANTASMA && n.data.isRoot) ?? nds.find((n) => n.id !== ID_FANTASMA);
-            const fantasma = nodoFantasma(draftVoz, ancla) as CustomNode;
-            return [...sinFantasma, fantasma];
-          }
-          // `semilla` o `correccion`: dibujar/actualizar el fantasma con el texto del backend.
-          const textoParaFantasma = decisionParcial.texto || draftVoz;
-          const ancla =
-            nds.find((n) => n.id !== ID_FANTASMA && n.data.isRoot) ?? nds.find((n) => n.id !== ID_FANTASMA);
-          // `nodoFantasma` devuelve null si el texto todavía no es una idea, y el cast `as CustomNode` de
-          // antes lo tapaba: seguía `fantasma.data.title = …` sobre null (crash) y en el otro camino se
-          // insertaba un null en la lista de nodos. Un `semilla` con texto vacío y sin borrador alcanza
-          // para llegar acá. Lo señaló la revisión externa del 26/09/2026.
-          const fantasma = nodoFantasma(textoParaFantasma, ancla) as CustomNode | null;
-          if (!fantasma) return sinFantasma.length === nds.length ? nds : sinFantasma;
-          if (decisionParcial.clase === 'correccion') {
-            // Marcar el fantasma como corrección para que el estilo lo refleje.
-            (fantasma.data as unknown as Record<string, unknown>).ghostCorreccion = true;
-          }
-          if (decisionParcial.titulo) {
-            fantasma.data.title = decisionParcial.titulo;
-          }
-          return [...sinFantasma, fantasma];
-        }
+        // ── Qué hacer con el borrador (Fase C) ───────────────────────────────────────────────────
+        // La decisión vive en una pieza pura y probada (`decidirBorrador`), así el ciclo de vida del
+        // borrador se testea sin montar el lienzo. La regla que importa acá: en fase `resolviendo` (el
+        // turno ya cerró y el segmentador está decidiendo) SIEMPRE se retira — por eso un parcial que
+        // llega tarde ya no puede resucitar el borrador como nodo fijo al lado del real.
+        const accion = decidirBorrador({
+          fase: faseTurno,
+          hayFantasma: hayFantasmaActual,
+          hayDecision: decisionParcial !== undefined && decisionParcial !== null,
+          clase: decisionParcial?.clase ?? null,
+          hayIdeaEnVivo: esIdeaEnVivo(draftVoz),
+        });
 
-        // ── Regla local (fallback: sin backend o decisión aún no llegada) ────────────────────────
-        if (!esIdeaEnVivo(draftVoz)) {
-          // Sin idea todavía: no borrar el fantasma que ya está (misma lógica que arriba).
-          if (hayFantasmaActual) return nds;
+        if (accion === 'retirar') {
           return sinFantasma.length === nds.length ? nds : sinFantasma;
         }
-        // Nace pegado al ancla del árbol (o al primer nodo): se ve DÓNDE va a caer, no en el vacío.
+        if (accion === 'conservar') {
+          // Ya está dibujado y el parcial no manda: no se toca (evita el parpadeo carácter a carácter).
+          return nds;
+        }
+
+        // `dibujar`: con el texto del backend si contestó, si no con el borrador local.
+        const textoParaFantasma = decisionParcial?.texto || draftVoz;
         const ancla =
           nds.find((n) => n.id !== ID_FANTASMA && n.data.isRoot) ?? nds.find((n) => n.id !== ID_FANTASMA);
-        const fantasma = nodoFantasma(draftVoz, ancla) as CustomNode;
+        // `nodoFantasma` devuelve null si el texto todavía no es una idea: sin este guard el cast lo
+        // tapaba y se seguía con `fantasma.data.title = …` sobre null (crash), o se insertaba un null en
+        // la lista de nodos. Lo señaló la revisión externa del 26/09/2026.
+        const fantasma = nodoFantasma(textoParaFantasma, ancla) as CustomNode | null;
+        if (!fantasma) return sinFantasma.length === nds.length ? nds : sinFantasma;
+        if (decisionParcial?.clase === 'correccion') {
+          // Marcar el fantasma como corrección para que el estilo lo refleje.
+          (fantasma.data as unknown as Record<string, unknown>).ghostCorreccion = true;
+        }
+        if (decisionParcial?.titulo) {
+          fantasma.data.title = decisionParcial.titulo;
+        }
         return [...sinFantasma, fantasma];
       });
     }, 120);
     return () => clearTimeout(timer);
-  }, [draftVoz, decisionParcial]);
+  }, [draftVoz, decisionParcial, faseTurno]);
 
   // Autoguardado continuo del lienzo activo (localStorage como caché + vault en disco)
   useEffect(() => {
@@ -4835,6 +4823,9 @@ export default function App() {
           setDraftVoz('');
           setDecisionParcial(undefined);
         }}
+        // La fase del turno: 'resolviendo' hace que el lienzo retire el borrador y no lo vuelva a dibujar
+        // hasta el próximo turno.
+        onFaseTurno={setFaseTurno}
         // Pedido 06: al cerrar el turno, los temas del dictado se crean como NODOS REALES del grafo,
         // encadenados desde el ancla. Sin aprobación previa: el error se revierte con Ctrl+Z.
         // Por qué acá y no en `onTurnoCerrado`: ése se dispara al cortar el turno en el motor, antes de
