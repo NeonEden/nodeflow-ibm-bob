@@ -7,7 +7,12 @@ import { apiUrl } from './apiBase';
  * it is forwarded securely via the x-gemini-api-key request header to the backend.
  * The server-side GEMINI_API_KEY environment variable is never exposed to the client.
  */
-export async function postAiAction(payload: Record<string, any>): Promise<Response> {
+export const MS_TIMEOUT_IA = 90_000;
+
+export async function postAiAction(
+  payload: Record<string, any>,
+  opts?: { timeoutMs?: number },
+): Promise<Response> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -24,11 +29,28 @@ export async function postAiAction(payload: Record<string, any>): Promise<Respon
   // Fase 12: el motor lo decide el selector global (se guarda en el backend), así que la petición
   // no lleva preferencia: todas las funciones de la app usan el mismo motor elegido.
   const inicio = performance.now();
-  const respuesta = await fetch(apiUrl('/api/ai/action'), {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-  });
+  const timeoutMs = opts?.timeoutMs ?? MS_TIMEOUT_IA;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
+
+  let respuesta: Response;
+  try {
+    respuesta = await fetch(apiUrl('/api/ai/action'), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      throw new Error('El motor no contestó a tiempo.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   // Traza real de la corrida para el interruptor (proveedor, tokens, costo, caché y latencia).
   try {
