@@ -16,6 +16,11 @@ export type AccionAtajo = 'abrir' | 'cerrar' | 'reiniciar' | 'ignorar';
  *
  *  · `escuchando` — el único con turno abierto: un `pressed` cierra, o reinicia si el turno ya se cerró.
  *  · `conectando` / `cerrando` — tránsitos de la sesión: el atajo no se mete (cortar ahí rompe el arranque).
+ *    Que ignorar sea seguro depende de que estos estados NO puedan quedarse pegados, y no pueden: la conexión
+ *    tiene timeout y rechaza sola (`assemblyaiRt.ts:74`, `speechmaticsRt.ts:59` → el estado pasa a `error`, y
+ *    en `error` esta función devuelve `abrir`), y el cierre tiene su red de seguridad (`setTimeout(fin, …)`).
+ *    La auditoría independiente del 26/09 propuso tratarlos como `cerrar`: con esa red, es innecesario; sin
+ *    ella, sería un parche sobre un bug de otro archivo.
  *  · **todo el resto** (`inactivo`, `cerrado`, `error`) — «no hay turno»: un `pressed` ABRE uno nuevo.
  *
  * El estado `cerrado` no estaba contemplado en la primera versión de esta pieza y el atajo quedaba mudo con
