@@ -58,6 +58,14 @@ interface VozPanelProps {
   onDecisionParcial?: (d: import('../services/vozService').DecisionParcial | null) => void;
   /** El turno se cerró: el borrador vivo deja de tener sentido y se retira del lienzo. */
   onTurnoCerrado?: () => void;
+  /**
+   * Decisión FINAL del turno: la que el segmentador devuelve con `es_final`, con los temas del dictado
+   * completo. Es la que crea los nodos en el lienzo (pedido 06). No se usa `onTurnoCerrado` para esto
+   * porque ése se dispara al cortar el turno en el motor, antes de que el segmentador juzgue el texto
+   * completo; y no se usa `onDecisionParcial` porque los parciales estables intermedios también traen
+   * temas y crearían nodos durante el dictado.
+   */
+  onTurnoFinal?: (temas: { titulo: string; texto: string }[] | null) => void;
 }
 
 /** Id corto de sesión de STT: sólo sirve para correlacionar y contar las trazas del log. */
@@ -94,7 +102,7 @@ const EJEMPLOS = [
  * Panel de Voz (Speechmatics). Hablás, la transcripción aparece en vivo y al cortar el motor
  * propone un PLAN de operaciones sobre el lienzo — que se aprueba antes de aplicarse.
  */
-export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, onPrevisualizar, onAplicarComandos, tituloNodo, preguntaAbierta, onResponder, onInicioConversacion, onTurnoConversacion, pedidoExterno, onParcialVivo, onDecisionParcial, onTurnoCerrado }) => {
+export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, onPrevisualizar, onAplicarComandos, tituloNodo, preguntaAbierta, onResponder, onInicioConversacion, onTurnoConversacion, pedidoExterno, onParcialVivo, onDecisionParcial, onTurnoCerrado, onTurnoFinal }) => {
   // Textos del panel en el idioma activo. La voz (entrada y salida) sigue el mismo idioma desde el
   // backend, así que acá sólo se traduce la interfaz.
   const { t } = useIdioma();
@@ -596,6 +604,9 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
           // Respuesta stale: si el texto ya cambió, esta decisión habla de una frase vieja.
           if (!esFinal && textoEnVueloRef.current !== texto) return;
           onDecisionParcial?.(decision);
+          // Cierre del turno: acá llegan los temas del dictado completo. Es el único punto donde se
+          // crean nodos (pedido 06): un parcial estable intermedio también trae `temas`.
+          if (esFinal) onTurnoFinal?.(decision?.temas ?? null);
         });
       };
 
