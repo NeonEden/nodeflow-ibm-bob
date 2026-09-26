@@ -76,6 +76,20 @@ export async function clasificarParcial(
 - Devuelve la decisión con un 200 bien formado, y una clase desconocida se normaliza a `nada`.
 - El throttle: dos parciales seguidos no disparan dos `fetch`.
 
+### 5. Banco de pruebas del pipeline (sin micrófono) — **el paso que evita grabar a ciegas**
+
+Antes de depender del audio en vivo, el pipeline tiene que poder ejercitarse con texto estático:
+una secuencia de parciales simulados («quiero», «quiero un nodo», «quiero un nodo de código», …) con
+`ms_desde_cambio` y `es_final` como los emitiría el WS. Se agrega como test/script reproducible:
+
+- Manda la secuencia a `clasificarParcial` y verifica las clases que devuelve en orden
+  (los primeros → `nada`; el estable con pausa → `semilla`; el que arranca con «no, mejor» → `correccion`).
+- **No** necesita micrófono, ni backend corriendo, ni app abierta: es el mismo camino con `fetch` mockeado.
+
+Por qué está en este pedido: si el pipeline sólo se puede probar hablando, cada verificación depende de
+que alguien grabe audio, y los fallos aparecen en la toma buena. Con la secuencia estática, el
+comportamiento se fija antes y la toma se hace una sola vez.
+
 ## Reglas de la casa (no negociables)
 
 1. **Un pedido, un alcance**: esto es el cliente. No toques `segmentador.rs` ni `server.rs` (ya están).
