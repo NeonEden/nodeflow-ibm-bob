@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  /* Cover 1280x640 (16:9). Product palette: dark slate + indigo/violet. */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 640px; overflow: hidden; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f5; position: relative; }
+  /* The shot enters full-bleed and fades toward the text: no hard edges. (A mask plus a veil that
+     darkened the right edge used to leave a visible vertical seam mid-cover.) */
+  .shot { position: absolute; right: 0; top: 0; width: 100%; height: 640px; object-fit: cover; object-position: 46% top; opacity: .5; }
+  .veil { position: absolute; inset: 0;
+    background: linear-gradient(90deg, #0f172a 0%, #0f172a 40%, rgba(15,23,42,.90) 53%, rgba(15,23,42,.72) 72%, rgba(15,23,42,.58) 100%); }
+  .topbar { position: absolute; left: 0; right: 0; top: 0; height: 8px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #34d399); }
+  .wrap { position: relative; padding: 62px 64px; height: 100%; display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .logo { width: 54px; height: 54px; border-radius: 14px; background: linear-gradient(135deg,#6366f1,#8b5cf6);
+          display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; color: #fff; }
+  .kick { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: #a5b4fc; }
+  h1 { font-size: 82px; line-height: .98; letter-spacing: -2px; margin: 26px 0 14px; color: #fff; }
+  .sub { font-size: 24px; line-height: 1.36; max-width: 660px; color: #e2e8f5; }
+  .sub b { color: #a5b4fc; }
+  .chain { margin-top: auto; font-size: 19px; color: #94a3b8; }
+  .chain b { color: #34d399; font-weight: 600; }
+  .meta { margin-top: 16px; display: flex; gap: 26px; font-size: 15px; color: #64748b; }
+</style>
+</head>
+<body>
+  <img class="shot" src="app.png" alt="The NodeFlow canvas">
+  <div class="veil"></div>
+  <div class="topbar"></div>
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo">NF</div>
+      <div class="kick">IBM Bob 2.0 Hackathon</div>
+    </div>
+    <h1>NodeFlow</h1>
+    <p class="sub">From idea to code with <b>IBM Bob 2.0</b>: a contract committed before touching code,
+    Bob's implementation against that contract, and an <b>independent audit</b> of the delivery.</p>
+    <div class="chain">contract → <b>Bob implements</b> → commit → independent review → fix</div>
+    <div class="meta">
+      <span>Tauri · Rust · React Flow</span>
+      <span>23 PRs merged in 48 h</span>
+      <span>Sep 27, 2026</span>
+    </div>
+  </div>
+</body>
+</html>
