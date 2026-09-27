@@ -34,12 +34,12 @@ Why it holds together. The canvas is where the request becomes the contract: you
 The limits, stated up front. The test counts (324/324 Rust, 141/141 frontend) are recorded results from the suites on the named commits, not a measured saving. The defect caught in review is one case, not a controlled experiment. The process was applied to this project: it does not prove general productivity.
 ```
 
-## 4 · Problem & Solution Statement — **445 / 500 words** ✅
+## 4 · Problem & Solution Statement — **449 / 500 words** ✅
 
 > Sale completo de `SUBMISSION-FINAL-EN.md` §4. Copialo desde ahí (es la versión medida).
 > Ruta: `docs/hackathon/SUBMISSION-FINAL-EN.md` → sección `## 4 · Problem & Solution Statement`.
 
-## 5 · IBM Bob Usage Statement — **469 / 500 words** ✅
+## 5 · IBM Bob Usage Statement — **484 / 500 words** ✅
 
 > Ídem, sección `## 5 · IBM Bob Usage Statement` del mismo archivo.
 
@@ -88,7 +88,7 @@ Después: `python scripts/bob-evidencia.py` las referencia y `docs/hackathon/EVI
 
 ## 10 · Antes de darle Submit — 30 segundos de control
 
-- [ ] Los dos statements pegados y **por debajo de 500 palabras** (445 y 469 medidos hoy).
+- [ ] Los dos statements pegados y **por debajo de 500 palabras** (449 y 484 medidos hoy).
 - [ ] Cover y slides subidos (los archivos de la tabla).
 - [ ] Video subido, ≤3 min, con ≥90 s de la solución funcionando.
 - [ ] Repo público y URL de la app = `https://nodeflowsss.netlify.app`.

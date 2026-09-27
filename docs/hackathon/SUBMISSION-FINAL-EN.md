@@ -74,7 +74,7 @@ voice turn closes — landed in `8582026` and the independent review caught a re
 once per audio segment instead of once per turn, which produced a chain of half-dictated nodes. It was fixed in
 `0e059ed`, before merge.
 
-We also publish the limits. The test counts (324/324 Rust, 141/141 frontend) are recorded results from the suites
+We also publish the limits. The test counts (324/324 Rust on `0d05b2f`, 141/141 frontend on `e47537a`) are recorded results from the suites
 on those commits — not a measured saving. The defect caught in review is one case, not a controlled experiment.
 The workflow was applied to this project, and applying it here does not prove it generalises. And the steps are
 manual and deliberate: **this is not an automatic voice-to-code pipeline**.
@@ -87,13 +87,14 @@ natural.
 
 ## 5 · IBM Bob Usage Statement (≤500 words)
 
-**Where Bob worked.** IBM Bob 2.0 was our implementing agent for the voice-to-graph path, and it is why that path
-exists at all. Bob implemented the backend **partial-transcript segmenter** in Rust — the module that decides,
-for every partial transcript, whether the user is starting an idea, correcting it, or just making noise — plus
-its HTTP endpoint, and the **partial-result client** on the frontend that feeds the live draft node in React
-Flow. The files it touched, with branch and line ranges, are recorded in `bob_sessions/attribution.md`,
+**Where Bob worked.** IBM Bob 2.0 was our implementing agent for the voice-to-graph path. Bob implemented the backend **partial-transcript segmenter** in Rust — `src-tauri/src/segmentador.rs`
+(312 lines) plus its endpoint in `server.rs`, delivered as `cff0baa` — the module that decides,
+for every partial transcript, whether the user is starting an idea, correcting it, or just making noise. It also
+implemented the **partial-result client** on the frontend that feeds the live draft node in React Flow:
+`src/services/vozService.ts` and a 207-line test suite, delivered as `2f55131`. The files it touched, with branch
+and line ranges, are recorded in `bob_sessions/attribution.md`,
 generated from Bob's own database by `scripts/bob-evidencia.py`; the two requests it worked on, with their
-delivered commits, are `docs/hackathon/PEDIDO-BOB-01.md` and `PEDIDO-02` through `PEDIDO-06`.
+delivered commits, are `docs/hackathon/PEDIDO-BOB-01.md` and `PEDIDO-02-cliente-parcial.md`.
 
 **How we used it, and what made it work.** Every request reached Bob as a committed contract, never as a
 sentence in a chat. Each contract fixed the scope, the exact signature and an enumerated list of expected cases,
@@ -156,3 +157,23 @@ now submitting: contract committed before the code, an implementing agent, and a
 - No «signed Windows release»: there is a published installer; Authenticode signing is not accredited.
 - No PR counter presented as savings: merged PRs include docs and dependencies. That is activity, not savings.
 - No claim that the workflow is automatic: the steps are manual, deliberate, and reviewed by a human.
+
+---
+
+## 10 · Final index — everything a judge needs, in one place
+
+| What | Where |
+|---|---|
+**Problem & Solution Statement** (445 words) | §4 of this file |
+**IBM Bob Usage Statement** (469 words) | §5 of this file |
+**Contracts, committed before the code** | `docs/hackathon/PEDIDO-BOB-01.md` · `PEDIDO-02-cliente-parcial.md` · `PEDIDO-03`–`PEDIDO-06` |
+**Bob's two deliveries** | `cff0baa` — segmenter, `src-tauri/src/segmentador.rs` (312 lines) + `server.rs` · `2f55131` — client, `src/services/vozService.ts` + 207-line test suite |
+**The correction that review triggered** | `e84fb5b` — the draft is judged by time, not by text difference |
+**Defect caught in independent review** | `0e059ed` — `VozPanel.tsx`: nodes were created once per audio segment instead of once per turn |
+**Bob evidence** | `bob_sessions/attribution.md` (per file and line) · `bob_sessions/*.png` ⚠️ *consumption summaries still pending* |
+**Tests** | Rust 324/324 on `0d05b2f` · frontend 141/141 on `e47537a` |
+**Video** | owner uploads — script in `docs/hackathon/VIDEO-SCRIPT-EN.md` (≤3 min, ≥90 s of the solution) |
+**Slides** | `docs/hackathon/submission/slides-en.pdf` (8, 16:9) |
+**Cover** | `docs/hackathon/submission/cover-en.png` (1280×640) |
+**Repository** | `github.com/NeonEden/nodeflow-ibm-bob` (public) |
+**Application** | `https://nodeflowsss.netlify.app` — real dictation, no key needed |

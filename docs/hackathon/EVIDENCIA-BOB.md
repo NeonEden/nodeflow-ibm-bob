@@ -99,8 +99,9 @@ las cinco últimas, del pedido 02 — **la misma tarea de Bob cubrió las dos en
 El desglose del contexto por turno (columna `costs.contextWindowBreakdown`) muestra de dónde salió cada
 token fijo: `toolDefinitions` 6.850, `toolSystemPrompts` 3.340, **`projectRules` 3.364** (el `AGENTS.md`
 y los documentos del repo entrando en su contexto), `skills` 839, `baseRules` 197, `environment` 77.
-Ese `projectRules` es la prueba de que el pedido commiteado **se usó como contexto**, y no como un
-mensaje suelto en el chat.
+Ese `projectRules` es el tamaño del contexto de reglas del proyecto (`AGENTS.md` y los documentos del repo
+entrando a su contexto). **No** prueba por sí solo que un contrato concreto se haya leído: eso lo prueba el propio
+pedido —la sesión en `bob_sessions/` y la entrega contra su firma—, no un contador de tokens.
 
 ## 5 · El reparto, sin adorno
 

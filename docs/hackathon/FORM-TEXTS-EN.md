@@ -14,8 +14,9 @@
 **Short Description**
 
 > NodeFlow is a voice canvas: you speak, nodes appear, and the request is written down while it is still
-> fresh. Each request becomes a versioned contract that **IBM Bob 2.0** implements, and a different agent
-> audits the delivery against that same text.
+> fresh. Each request can become a versioned contract — that is the workflow we submit — and on this project
+> **IBM Bob 2.0** implemented the two requests of the voice path while a different agent audited each delivery
+> against that same text.
 
 **Long Description**
 
@@ -39,8 +40,8 @@
 > node — chained, draggable, connectable — created without a confirmation step, because the safety net is
 > that you can undo it. The interface ships in Spanish and English.
 >
-> **Why it fit together.** The canvas is where the request becomes the contract: you talk, the nodes
-> appear, and it is written down while it is still fresh. The contract is what makes the review objective,
+> **Why it fit together.** The canvas is where the request becomes the contract — **manually**: you talk, the nodes
+> appear, and you decide when an idea is ready to be written down as one, while it is still fresh. The contract is what makes the review objective,
 > and the review is what catches the defect before merge.
 >
 > **The limits, stated up front.** The test counts (324/324 Rust, 135/135 frontend) are recorded results
@@ -69,10 +70,10 @@
 |---|---|
 | **Cover image** | `docs/hackathon/submission/cover-en.png` (1280×640) |
 | **Slide presentation** | `docs/hackathon/submission/slides-en.pdf` (8 slides, 16:9) |
-| **Video presentation** | to record — script in `VIDEO-SCRIPT-EN.md`, under 3 min, **in English** |
+| **Video presentation** | owner uploads — script in `VIDEO-SCRIPT-EN.md`, under 3 min, **in English**, with at least 90 s of the solution working |
 | **Public GitHub repository** | `github.com/NeonEden/nodeflow-ibm-bob` |
-| **Application URL** | `https://nodeflowsss.netlify.app` (web demo: simulates voice) |
-| **Bob evidence (mandatory)** | `bob_sessions/` — ⚠️ the *task session consumption summaries* are still missing: Tasks → select the task → click the task header → screenshot |
+| **Application URL** | `https://nodeflowsss.netlify.app` — public web demo with **real dictation**: the server issues a temporary speech session (30 s per session, 3 per day), no key needed |
+| **Bob evidence (mandatory)** | `bob_sessions/` — ⚠️ still missing: **the two PNGs there are NOT the summaries** (one is a context breakdown, one is a chat with counters). Capture the *task session consumption summary* of the sessions that did the work: **Tasks → select the task → click the task header → screenshot**. Tasks 01 and 02 share one session (`EVIDENCIA-BOB.md` L74–75) — do not invent one per request |
 
 ## What we do NOT say (removed on purpose after the audit)
 

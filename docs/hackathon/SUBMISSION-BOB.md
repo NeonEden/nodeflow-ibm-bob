@@ -43,12 +43,16 @@ del video es el más caro: hacerlo una vez en lugar de dos es la diferencia entr
 > —al implementar, al revisar y al corregir—. Nuestro workflow lo ataca por el principio: la idea se escribe
 > como **contrato commiteado antes de tocar código** (`docs/hackathon/PEDIDO-0*.md`), Bob lo implementa, y una
 > revisión independiente audita la entrega contra ese contrato. Cuando el contrato no fijaba algo (por
-> ejemplo, la cardinalidad de un evento), la auditoría lo encontró **antes** de que llegara a producción.
+> ejemplo, la cardinalidad de un evento), la auditoría lo encontró y la corrección entró **antes del merge**.
 >
-> **Bob es el implementador, y cada pedido tiene la misma cadena verificable:** contrato → sesión de Bob →
-> commit de entrega → revisión independiente → corrección. Un pedido completo: el contrato del segmentador de
-> voz se commiteó en `00edcf6`; Bob implementó el módulo y su endpoint y entregó en `cff0baa`; la auditoría
-> encontró un defecto real de temporalidad, corregido en `0e059ed`. El resto está en `docs/hackathon/` con sus
+> **Bob es el implementador de los dos pedidos que tomó, y cada uno tiene la misma cadena verificable:** contrato →
+> sesión de Bob → commit de entrega → revisión independiente → corrección. El primero: el contrato del segmentador
+> de voz se commiteó en `00edcf6`; Bob implementó el módulo (`src-tauri/src/segmentador.rs`) y su endpoint y
+> entregó en `cff0baa`; la corrección que salió de la revisión —juzgar el borrador por **tiempo**, no por
+> diferencia de texto— quedó en `e84fb5b`. El segundo: el cliente que lleva esa decisión al lienzo
+> (`src/services/vozService.ts` + su suite de tests) se entregó en `2f55131`. En un pedido posterior del equipo
+> —crear los nodos al cerrar el turno, `8582026`— la auditoría encontró que se creaban **una vez por segmento de
+> audio** en vez de una por turno, y se corrigió en `0e059ed`. El resto está en `docs/hackathon/` con sus
 > entregas, y las capturas de las sesiones de Bob están en `bob_sessions/`.
 >
 > **Lo que se construyó:** un lienzo por voz (Tauri + Rust + React Flow) donde hablás y el canvas se dibuja en
@@ -61,7 +65,7 @@ del video es el más caro: hacerlo una vez en lugar de dos es la diferencia entr
 > agentes de código · desarrollador remoto · idea → grafo
 
 **Improvements made** (el proyecto es propio y evolucionó durante el evento)
-> Antes del hackathon NodeFlow era un lienzo manual. Durante el evento se le agregó el camino completo de voz a
+> Antes del hackathon NodeFlow ya tenía dictado y acciones de voz. Durante el evento se le agregó el camino completo de voz a
 > grafo: segmentador determinista, preview en vivo, creación de nodos por tema, y el flujo sin fricción con
 > deshacer. El detalle de cada cambio está en los commits, uno por pedido.
 
@@ -72,10 +76,10 @@ del video es el más caro: hacerlo una vez en lugar de dos es la diferencia entr
 | Material | Estado | Quién |
 |---|---|---|
 | Repo con el código donde Bob asistió | ✅ público: `github.com/NeonEden/nodeflow-ibm-bob` | — |
-| **Capturas de las sesiones de Bob** (requisito explícito) | ⚠️ 1 de varias — `docs/hackathon/capturas-bob/` | asistente (GUI) |
-| Video presentation | ❌ falta — guion abajo | Tomás (grabar) |
-| Slide presentation | ❌ falta — se arma en markdown → PDF | asistente |
-| Cover image | ❌ falta | asistente |
+| **Capturas de las sesiones de Bob** (requisito explícito) | ⚠️ **faltan los *task session consumption summary***: los 2 PNG en `bob_sessions/` **NO** son los summaries (uno es un desglose de contexto, el otro un chat). Tasks → tarea → clic en el encabezado → captura. Las tareas 01 y 02 comparten sesión | Tomás (GUI de Bob) |
+| Video presentation | ❌ falta — lo graba Tomás (guion abajo: ≤3 min, ≥90 s de solución) | Tomás |
+| Slide presentation | ✅ `docs/hackathon/submission/slides-en.pdf` (8 slides, 16:9) | listo |
+| Cover image | ✅ `docs/hackathon/submission/cover-en.png` (1280×640) | listo |
 | App URL / plataforma de demo | ✅ **<https://nodeflowsss.netlify.app>** (demo web público, sin login) | — |
 | Licencia MIT | ⚠️ verificar que el `LICENSE` sea MIT | asistente |
 | `README` con instrucciones de prueba | ✅ existe (revisar que esté al día) | asistente |

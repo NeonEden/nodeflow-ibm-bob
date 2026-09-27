@@ -6,8 +6,8 @@ with the sentence; when the turn closes, the plan is **validated in code** again
 touches your state. The graph lives in your Obsidian vault, in files you own.
 
 **How this repo was built (the workflow we submit).** Every request was written as a **contract committed
-before any code** (`docs/hackathon/PEDIDO-0*.md`), **IBM Bob 2.0** implemented it, and an **independent
-review by a different agent** audited the delivery against that same text:
+before any code** (`docs/hackathon/PEDIDO-0*.md`), **IBM Bob 2.0** implemented the two requests of the voice path,
+and an **independent review by a different agent** audited each delivery against that same text:
 
 **request → contract → Bob implements → delivery commit → independent review → fix**
 
