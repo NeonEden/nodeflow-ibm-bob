@@ -1,0 +1,85 @@
+{
+  "que_es": "Verificador de la prueba 5.b. Ground truth escrito ANTES de correr nada: no se puede medir omisiones sin saber de antemano que habia que encontrar.",
+  "contrato": "docs/research/prueba-5b/PEDIDO-11-PRUEBA-voz-cola-de-espera.md",
+  "defectos_sembrados": [
+    {
+      "id": "D1",
+      "tipo": "contradiccion",
+      "que": "El alcance dice que el tope de la cola es de 30 s; la seccion de limites dice que el corte duro del servidor es de 60 s, sin decir cual manda.",
+      "keywords": [["30"], ["60"]],
+      "severidad": "alta",
+      "porque": "Es la misma clase de defecto que costo un hotfix el 27/09 (max_session_duration_seconds fuera de rango): dos numeros que se contradicen y nadie decide cual es el limite."
+    },
+    {
+      "id": "D2",
+      "tipo": "contradiccion",
+      "que": "La FIRMA declara src/services/vozService.ts y el ENTREGABLE declara src/services/vozCola.ts como el archivo nuevo a crear.",
+      "keywords": [["vozService"], ["vozCola"]],
+      "severidad": "alta",
+      "porque": "Un ejecutor que no note la contradiccion escribe en el archivo equivocado."
+    },
+    {
+      "id": "D3",
+      "tipo": "decision_ausente",
+      "que": "No dice que hacer si el proveedor de voz no responde: no define si reintentar, fallar o degradar.",
+      "keywords": [["reintent"], ["reintent"], ["falla del proveedor"], ["proveedor no responde"], ["timeout"], ["degradar"], ["sin definir"], ["no especifica"], ["no dice"]],
+      "severidad": "alta",
+      "porque": "Sin decision, el ejecutor elige por su cuenta; y esa eleccion no queda auditada."
+    },
+    {
+      "id": "D4",
+      "tipo": "solapamiento",
+      "que": "Las piezas A y B declaran ambas tocar src/components/VozPanel.tsx: dos escritores sobre el mismo archivo.",
+      "keywords": [["VozPanel"], ["mismo archivo"], ["dos escritores"], ["un solo escritor"], ["colision"], ["se solapan"]],
+      "severidad": "alta",
+      "porque": "Rompe la regla de un escritor por archivo y produce el merge que el sistema no puede resolver."
+    },
+    {
+      "id": "D5",
+      "tipo": "dependencia_no_declarada",
+      "que": "La pieza B usa getColaDemo() que la pieza A debe crear, pero el contrato no fija el orden ni prohibe invertirlo.",
+      "keywords": [["getColaDemo"], ["orden"], ["depende"], ["sin declarar"], ["no declara"], ["dependencia"], ["disciplina el orden"], ["invertir"]],
+      "severidad": "media",
+      "porque": "Ejecutar en el orden equivocado deja a B contra una funcion que todavia no existe."
+    },
+    {
+      "id": "D6",
+      "tipo": "referencia_inventada",
+      "que": "Pide usar src/services/sesionVoz.ts y su funcion crearSesionVoz(), que no existen en el repo.",
+      "keywords": [["sesionVoz"], ["crearSesionVoz"], ["no existe"], ["inexistente"], ["verificar la exist"], ["no se encuentra"], ["no esta en el repo"]],
+      "severidad": "alta",
+      "porque": "Es el defecto que mas veces se cuela: el modelo lo repite con seguridad en vez de comprobarlo. Verificable con un ls."
+    },
+    {
+      "id": "D7",
+      "tipo": "caso_faltante",
+      "que": "Lista casos de prueba pero ninguno cubre el camino de error (solo el feliz).",
+      "keywords": [["error"], ["no cubre"], ["falta un caso"], ["caso de error"], ["camino de error"], ["solo el feliz"], ["solo el caso feliz"], ["faltan casos"]],
+      "severidad": "media",
+      "porque": "Un contrato con casos incompletos produce una aceptacion que no prueba nada en el camino malo."
+    },
+    {
+      "id": "D8",
+      "tipo": "contradiccion_de_rol",
+      "que": "Pide que el ejecutor escriba docs/PEDIDO-11.md, que es el propio contrato: el que ejecuta no edita su contrato.",
+      "keywords": [["PEDIDO-11"], ["su propio contrato"], ["el contrato mismo"], ["no debe editar"], ["quien ejecuta"], ["escritor del contrato"], ["no modifica el contrato"]],
+      "severidad": "media",
+      "porque": "Tocar el contrato desde la ejecucion invalida la auditoria: el arbitro pierde su referencia."
+    }
+  ],
+  "verificaciones_en_disco": {
+    "referencias_inexistentes_confirmadas": [
+      "src/services/sesionVoz.ts",
+      "crearSesionVoz"
+    ],
+    "nota": "Confirmadas con ls y grep sobre el repo antes de escribir el contrato: ninguna de las dos existe. Cualquier hallazgo que las de por buenas es un falso negativo."
+  },
+  "metricas": {
+    "recall": "defectos sembrados encontrados / 8",
+    "precision": "hallazgos reales / hallazgos reportados (un hallazgo real = corresponde a un sembrado)",
+    "falsos_positivos": "hallazgos que no corresponden a ningun sembrado",
+    "referencias_inventadas": "citas de archivos, funciones o lineas que no existen (se comprueban una por una)",
+    "esquema": "el JSON de salida valida contra el esquema pedido, sin texto alrededor"
+  },
+  "como_se_empareja": "Un defecto sembrado se considera ENCONTRADO si la respuesta del modelo menciona al menos una de sus keywords (case-insensitive) Y no lo contradice. El emparejamiento es mecanico, igual para todos los modelos: ningun juicio mio entra en el conteo."
+}

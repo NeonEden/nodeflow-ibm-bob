@@ -82,11 +82,16 @@ gpt-5-mini | 2,3 s | **NO** | no emitió | Igual que el anterior. |
 > asignaciones de abajo son **candidaturas a evaluar**, y varias podrían cambiarse de lugar al correr la
 > prueba del §5.b.
 
-### Candidatura actual a orquestador: `gpt-6-astra` (1000 TPM)
-Razones medidas y de diseño: context window grande, devuelve **JSON válido** en 2,8 s, y es el único del lote
-con capacidad de razonamiento *y* cuota suficiente. Su límite —no acepta tools con razonamiento— encaja con
-el uso: **el orquestador no debería estar tocando herramientas de sistema de todos modos**; escribe
-contratos, audita entregas y firma veredictos.
+### Candidatura actual a orquestador: `gpt-5.4-nano` (5000 TPM)
+> **Cambiada tras la prueba de aceptación (§6).** Antes de correrla, esta candidatura era de `gpt-6-astra`,
+> elegido por razonamiento + JSON + cuota. La prueba midió lo que importa —leer un contrato y detectar sus
+> defectos— y **nano empató el recall de astra con 2 reportes menos, la mitad del tiempo y cinco veces la
+> cuota**, además de encontrar el defecto que astra pasó por alto. El razonamiento de astra no se tradujo en
+> mejor lectura: es la lección del documento entero, aplicada al propio documento.
+
+Astra queda como **segundo lector**: su valor no es ser mejor, es **ver distinto** — juntos cubren 7 de los 8
+defectos sembrados, contra 6 de cada uno por separado. Su límite medido sigue siendo real: no acepta `tools`
+combinadas con razonamiento.
 
 ### Modelo ejecutante candidato: `gpt-5.4-nano` (5000 TPM)
 **5000 TPM es diez veces la cuota del siguiente**, y respeta structured output en 2,3 s. Para piezas de
@@ -368,12 +373,72 @@ Ratifica el orden propuesto con formulaciones mejores que las mías:
 
 ---
 
+## 6 · Resultados de la prueba 5.b (ejecutada 2026-09-27)
+
+**Ground truth**: 8 defectos sembrados de 5 tipos (contradicciones de número, de archivo y de rol; decisión
+ausente; solapamiento de escritor; dependencia no declarada; referencia inexistente verificada con `ls`;
+caso de error faltante). Un solo prompt idéntico para todos, emparejamiento mecánico por keywords, y el
+contrato revisado antes de correrlo.
+
+| Modelo | TPM | Recall | Reportados | Esquema | Tiempo |
+|---|---|---|---|---|---|
+**gpt-4.1-mini** | 100 | **1/8** | 3 | OK | **5 s** |
+**DeepSeek-V4-Flash** | 20 | 4/8 | 5 | OK | 8 s |
+**gpt-5.4-nano** | **5000** | **6/8** | **6** | OK | **11 s** |
+**gpt-6-astra** | 1000 | 6/8 | 8 | OK | 23 s |
+**grok-4.6** | 50 | **7/8** | 11 | OK | **99 s** |
+gpt-5 | 50 | **sin contenido** | — | — | 25 s |
+gpt-5-mini | 50 | **sin contenido** | — | — | 16 s |
+
+### Las siete conclusiones
+
+1. **Nano gana, y no es el que yo había puesto primero.** Recall 6/8 **con 6 reportados** — sin una sola
+   pieza de ruido — en 11 s. Astra logra el mismo recall con 2 reportes de más y el doble de tiempo.
+2. **Nano encontró el defecto que Astra no vio.** La referencia inventada (`src/services/sesionVoz.ts`,
+   `crearSesionVoz()`), que es el defecto más peligroso del lote —el que un ejecutor repite con seguridad—
+   fue detectada por **nano** como `referencia_inventada` y **pasada por alto por astra**.
+3. **Grok tiene el mejor recall y el peor perfil operativo**: 7/8, pero **99 segundos** (9× nano) y **11
+   reportes** para 7 aciertos. Valida la propuesta del auditor: sirve como **auditor**, no en un bucle.
+4. **Los modelos de razonamiento volvieron a devolver contenido vacío**, ahora con **2.200 tokens** de
+   presupuesto. Esto **matiza las dos posiciones y las reconcilia**: no es incapacidad del modelo —el
+   auditor tenía razón— pero tampoco es un problema de mi prueba anterior: **razonar consume el presupuesto
+   antes de emitir**, y con **50 TPM** no se le puede dar más margen sin esperar minutos. **La combinación
+   razonamiento + 50 TPM los invalida operativamente**; el arreglo es subir la cuota, no cambiar la prueba.
+5. **El más barato y rápido fue el peor lector: gpt-4.1-mini, 1/8 en 5 s.** Confirma el punto del auditor
+   por la vía más directa posible: **velocidad y precio no eligen**.
+6. **Nadie sacó 8/8.** Ni el mejor. Un contrato no se audita con un solo modelo: la verificación
+   independiente no es una formalidad, es la única forma de cubrir el resto. Refuerza la regla «el que
+   modifica no firma» y agrega un corolario: **el auditor conviene que sea de otra familia** (nano vio lo
+   que astra no, y grok vio lo que nano no).
+7. **Ningún modelo aprobó un contrato con 8 defectos**: todos devolvieron `apto: false` y todos cumplieron el
+   esquema. **No hubo un solo falso «apto»** — el modo de falla peligroso no apareció.
+
+### Corrección al §2
+
+**La candidatura a orquestador cambia de `gpt-6-astra` a `gpt-5.4-nano`**, con esta evidencia: igual recall,
+mejor precisión, la mitad del tiempo y **cinco veces la cuota**. Astra queda como **segundo lector** (útil
+justamente porque ve distinto: los dos juntos cubren 7 de 8 defectos, contra 6 de cada uno por separado).
+Grok entra como **auditor de tercera línea**, con su costo en tiempo declarado.
+
+### Límites de esta prueba (declarados, no escondidos)
+
+- **Una corrida por modelo.** Sirve para descartar y para ordenar; no es un percentil.
+- **El campo `tipo` que devuelven los modelos es ruido**: astra etiquetó la contradicción de la FIRMA como
+  «decisión ausente». El emparejamiento se hizo sobre la **cita**, no sobre el tipo — y aun así el conteo
+  por keywords es laxo y puede inflar el recall.
+- **El ruido se subestima**: mi contador de «sobrantes» sólo marca los reportes que no tocan ninguna keyword
+  de ningún defecto. Grok reportó 11 para 7 aciertos: hay ruido real que el contador no captura.
+- **Un solo contrato.** El resultado no generaliza a otros tipos de pedido sin repetir la prueba.
+- Los conteos crudos, con la cita de cada modelo, quedan en `prueba-5b/resultados.json` para que cualquiera
+  pueda recontar sin depender de mi lectura.
+
+---
+
 ## Anexo · Lo que este documento NO afirma
 
-> **Las asignaciones de modelos (§2 y §5.a) son candidaturas, no veredictos.** La prueba de aceptación que
-> las convertiría en veredicto está definida en §5.b y **no se ejecutó**. Todo lo medido acá (TPM, latencia,
-> structured output) es condición necesaria; la suficiente es el desempeño sobre casos con defectos
-> sembrados, y eso está pendiente.
+> **Las asignaciones de modelos (§2 y §5.a) ya pasaron por la prueba de aceptación (§6), que SE EJECUTÓ.** El
+> resultado movió la candidatura a orquestador de `gpt-6-astra` a `gpt-5.4-nano`, con evidencia. Siguen sin
+> ser veredictos definitivos: son **una corrida sobre un contrato**, y así están declarados sus límites.
 
 - **Precios**: los de la tabla 4.1 salen de la página oficial de Azure OpenAI y están citados. **No** hay
   precios verificados de `gpt-6-astra`, `gpt-5.4-nano`, ni de los modelos de Foundry (Llama, DeepSeek,

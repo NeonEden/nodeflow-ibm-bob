@@ -1,0 +1,303 @@
+{
+  "astra": {
+    "json": true,
+    "esquema": true,
+    "seg": 23.257890939712524,
+    "encontrados": [
+      "D1",
+      "D2",
+      "D3",
+      "D4",
+      "D5",
+      "D8"
+    ],
+    "n_defectos": 8,
+    "apto": false,
+    "sobrantes": [
+      "decision_ausente | crea la cola y persiste el borrador. | no se determ",
+      "caso_faltante | el usuario retoma el borrador: el contenido vuelve al "
+    ],
+    "defectos": [
+      {
+        "tipo": "solapamiento",
+        "cita": "También toca `src/components/VozPanel.tsx` para el aviso de «pendiente».",
+        "porque": "Las piezas A y B modifican el mismo panel para mostrar el estado pendiente. Esto contradice la regla de un escritor por archivo; trabajar en ramas distintas no elimina el solapamiento ni define quién integra los cambios.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "decision_ausente",
+        "cita": "**ENTREGABLE:** `src/services/vozCola.ts` (nuevo) + el panel que lo consume.",
+        "porque": "No se define qué responsabilidad tiene vozCola.ts frente a vozService.ts, que ya crea, persiste y expone la cola. Los agentes podrían implementar estados o persistencias duplicados.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "decision_ausente",
+        "cita": "**FIRMA:** `src/services/vozService.ts` → `export function guardarColaDemo(texto: string): ColaGuardada`",
+        "porque": "No se especifica la estructura ni la ubicación de ColaGuardada, ni la firma y el resultado de getColaDemo(). Falta un contrato compartido para implementar y consumir el servicio, incluido el estado sin borrador.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "decision_ausente",
+        "cita": "El tope de la cola es de **30 segundos** de audio por turno.",
+        "porque": "La operación de guardado recibe solo texto y no se asigna a ninguna pieza la medición o el recorte del audio. Tampoco se define qué fragmento conservar cuando se supera el tope ni cómo se coordina con el corte del servidor a los 60 segundos. Ambos límites pueden coexistir, pero falta el mecanismo para cumplirlos.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "decision_ausente",
+        "cita": "Crea la cola y persiste el borrador.",
+        "porque": "No se determina dónde se persiste, a qué usuario o sesión pertenece el borrador ni cuánto debe durar. La promesa de retomarlo cuando quiera no tiene un criterio verificable ante recargas o cierres de la aplicación.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "caso_faltante",
+        "cita": "El usuario dicta y agota la sesión: el texto queda como borrador pendiente.",
+        "porque": "No se distingue el agotamiento de la cuota diaria del cierre de una sesión por duración. Tampoco se asigna quién conserva el texto parcial ni cuándo dispara el guardado para evitar perderlo ante el corte duro sin reintento.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "caso_faltante",
+        "cita": "El usuario retoma el borrador: el contenido vuelve al lienzo.",
+        "porque": "No se define si retomar reemplaza o agrega contenido al lienzo, si elimina el pendiente ni qué ocurre al retomar dos veces. Tampoco se contempla un nuevo turno cuando ya existe un borrador pendiente.",
+        "severidad": "media"
+      },
+      {
+        "tipo": "solapamiento",
+        "cita": "Al cerrar, actualizar `docs/PEDIDO-11.md` marcando las piezas terminadas, así el resto del equipo ve el\n  estado sin preguntar.",
+        "porque": "La instrucción común no asigna un responsable único para actualizar el documento. Ambos ejecutores podrían modificarlo, incumpliendo la regla de un escritor por archivo.",
+        "severidad": "media"
+      }
+    ],
+    "raw": "{\n  \"apto\": false,\n  \"defectos\": [\n    {\n      \"tipo\": \"solapamiento\",\n      \"cita\": \"También toca `src/components/VozPanel.tsx` para el aviso de «pendiente».\",\n      \"porque\": \"Las piezas A y B modifican el mismo panel para mostrar el estado pendiente. Esto contradice la regla de un escritor por archivo; trabajar en ramas distintas no elimina el solapamiento ni define quién integra los cambios.\",\n      \"severidad\": \"alta\"\n    },\n    {\n      \"tipo\": \"decision_ausente\",\n      \"cita\": \"**ENTREGABLE:** `src/services/vozCola.ts` (nuevo) + el panel que lo consume.\",\n      \"porque\": \"No se define qué responsabilidad tiene vozCola.ts frente a vozService.ts, que ya crea, persiste y expone la cola. Los agentes podrían implementar estados o persistencias duplicados.\",\n      \"severidad\": \"alta\"\n    },\n    {\n      \"tipo\": \"decision_ausente\",\n      \"cita\": \"**FIRMA:** `src/services/vozService.ts` → `export function guardarColaDemo(texto: string): ColaGuardada`\",\n      \"porque\": \"No se especifica la estructura ni la ubicación de ColaGuardada, ni la firma y el resultado de getColaDemo(). Falta un contrato compartido para implementar y consumir el servicio, incluido el estado sin borrador.\",\n      \"severidad\": \"alta\"\n    },\n    {\n      \"tipo\": \"decision_ausente\",\n      \"cita\": \"El tope de la cola es de **30 segundos** de audio por turno.\",\n      \"porque\": \"La operación de guardado recibe solo texto y no se asigna a ninguna pieza la medición o el recorte del audio. Tampoco se define qué fragmento conservar cuando se supera el tope ni cómo se coordina con el corte del servidor a los 60 segundos. Ambos límites pueden coexistir, pero falta el mecanismo para cumplirlos.\",\n      \"severidad\": \"alta\"\n    },\n    {\n      \"tipo\": \"decision_ausente\",\n      \"cita\": \"Crea la cola y persiste el borrador.\",\n      \"porque\": \"No se determina dónde se persiste, a qué usuario o sesión pertenece el borrador ni cuánto debe durar. La promesa de retomarlo cuando quiera no tiene un criterio verificable ante recargas o cierres de la aplicación.\",\n      \"severidad\": \"alta\"\n    },\n    {\n      \"tipo\": \"caso_faltante\",\n      \"cita\": \"El usuario dicta y agota la sesión: el texto queda como borrador pendiente.\",\n      \"porque\": \"No se distingue el agotamiento de la cuota diaria del cierre de una sesión por duración. Tampoco se asigna quién conserva el texto parcial ni cuándo dispara el guardado para evitar perderlo ante el corte duro sin reintento.\",\n      \"severidad\": \"alta\"\n    },\n    {\n      \"tipo\": \"caso_faltante\",\n      \"cita\": \"El usuario retoma el borrador: el contenido vuelve al lienzo.\",\n      \"porque\": \"No se define si retomar reemplaza o agrega contenido al lienzo, si elimina el pendiente ni qué ocurre al retomar dos veces. Tampoco se contempla un nuevo turno cuando ya existe un borrador pendiente.\",\n      \"severidad\": \"media\"\n    },\n    {\n      \"tipo\": \"solapamiento\",\n      \"cita\": \"Al cerrar, actualizar `docs/PEDIDO-11.md` marcando las piezas terminadas, así el resto del equipo ve el\\n  estado sin preguntar.\",\n      \"porque\": \"La instrucción común no asigna un responsable único para actualizar el documento. Ambos ejecutores podrían modificarlo, incumpliendo la regla de un escritor por archivo.\",\n      \"severidad\": \"media\"\n    }\n  ],\n  \"decisiones_faltantes\": [\n    \"Asignar un único propietario de VozPanel.tsx y definir cómo se integra el servicio con el panel.\",\n    \"Delimitar las responsabilidades y la relación entre vozService.ts y vozCola.ts.\",\n    \"Definir ColaGuardada y el contrato completo de getColaDemo(), incluidos ausencia de borrador y errores.\",\n    \"Asignar la captura del texto parcial y el disparador de guardado; distinguir cuota diaria agotada de corte por duración.\",\n    \"Definir cómo se mide y aplica el máximo de 30 segundos, qué fragmento se conserva y cómo se evita perderlo al llegar al corte de 60 segundos.\",\n    \"Elegir almacenamiento, alcance por usuario y duración de la persistencia.\",\n    \"Definir la transición al retomar, la convivencia con contenido existente y el comportamiento ante nuevos turnos con pendientes.\",\n    \"Asignar un único responsable de actualizar docs/PEDIDO-11.md.\"\n  ]\n}"
+  },
+  "nano": {
+    "json": true,
+    "esquema": true,
+    "seg": 10.583216190338135,
+    "encontrados": [
+      "D1",
+      "D2",
+      "D3",
+      "D5",
+      "D6",
+      "D7"
+    ],
+    "n_defectos": 6,
+    "apto": false,
+    "sobrantes": [
+      "decision_ausente | este pedido agrega una **cola de espera**: el texto"
+    ],
+    "defectos": [
+      {
+        "tipo": "dependencia_no_declarada",
+        "cita": "- Toma la sesión con `src/services/sesionVoz.ts`, que ya resuelve el ciclo de vida: llamar a su función\n  `crearSesionVoz()` y usar el token que devuelve.",
+        "porque": "El contrato no declara cómo se integra la cola con el flujo de tokens/datos existente (por ejemplo, en qué punto se recibe el texto parcial antes del corte). Esto puede hacer que el ejecutor no sepa qué evento o dato usar para guardar el borrador.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "decision_ausente",
+        "cita": "El tope de la cola es de **30 segundos** de audio por turno.",
+        "porque": "No se define el criterio exacto para convertir esos 30 segundos a texto (segundos de audio vs. duración real en proveedor vs. límite por caracteres). Tampoco se indica qué hacer cuando el usuario dicta más allá del tope (recortar, truncar, o partir en múltiples ítems).",
+        "severidad": "media"
+      },
+      {
+        "tipo": "decision_ausente",
+        "cita": "Este pedido agrega una **cola de espera**: el texto que el usuario alcanzó a dictar antes de que se le corte\nla sesión queda guardado como un borrador en el lienzo, marcado como «pendiente», y el usuario puede\nretomarlo cuando quiera.",
+        "porque": "No se especifica el formato/estructura del “borrador” (solo texto o también metadata como timestamps, idioma, o estado de reconocimiento). Sin eso, la persistencia y la reconstrucción pueden ser inconsistentes entre servicio y panel.",
+        "severidad": "media"
+      },
+      {
+        "tipo": "referencia_inventada",
+        "cita": "- Expone `getColaDemo()` para que el panel pueda leer el estado de la cola.",
+        "porque": "El contrato declara una función a exponer, pero no existe en el contrato ninguna referencia al archivo existente `src/services/vozService.ts` ni definición previa que garantice que `getColaDemo()` sea parte del diseño actual. El nombre podría ser una invención respecto al estado real del repositorio, generando divergencia con el executor.",
+        "severidad": "media"
+      },
+      {
+        "tipo": "caso_faltante",
+        "cita": "3 · Casos esperados\n\n1. El usuario dicta y agota la sesión: el texto queda como borrador pendiente.\n2. El usuario retoma el borrador: el contenido vuelve al lienzo.",
+        "porque": "Faltan casos clave para la cola, por ejemplo: usuario agota sesión pero luego retoma y vuelve a agotar otra vez (se reemplaza o se encola), usuario descarta el borrador, recarga la página mientras hay «pendiente», y comportamiento si la recuperación falla (getColaDemo vacío/error).",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "contradiccion",
+        "cita": "- El corte duro del servidor es de **60 segundos**: pasado ese punto la sesión se cierra del lado del\n  proveedor y no hay reintento posible.\n- El contador de sesiones por día no cambia.",
+        "porque": "No se aclara cómo se relaciona el “tope de 30 segundos por turno” con el “corte duro 60 segundos” del servidor. Puede haber inconsistencias sobre qué porción exacta se guardará cuando el proveedor corte a 60s pero el producto limita a 30s.",
+        "severidad": "media"
+      }
+    ],
+    "raw": "{\"apto\":false,\"defectos\":[{\"tipo\":\"dependencia_no_declarada\",\"cita\":\"- Toma la sesión con `src/services/sesionVoz.ts`, que ya resuelve el ciclo de vida: llamar a su función\\n  `crearSesionVoz()` y usar el token que devuelve.\",\"porque\":\"El contrato no declara cómo se integra la cola con el flujo de tokens/datos existente (por ejemplo, en qué punto se recibe el texto parcial antes del corte). Esto puede hacer que el ejecutor no sepa qué evento o dato usar para guardar el borrador.\",\"severidad\":\"alta\"},{\"tipo\":\"decision_ausente\",\"cita\":\"El tope de la cola es de **30 segundos** de audio por turno.\",\"porque\":\"No se define el criterio exacto para convertir esos 30 segundos a texto (segundos de audio vs. duración real en proveedor vs. límite por caracteres). Tampoco se indica qué hacer cuando el usuario dicta más allá del tope (recortar, truncar, o partir en múltiples ítems).\",\"severidad\":\"media\"},{\"tipo\":\"decision_ausente\",\"cita\":\"Este pedido agrega una **cola de espera**: el texto que el usuario alcanzó a dictar antes de que se le corte\\nla sesión queda guardado como un borrador en el lienzo, marcado como «pendiente», y el usuario puede\\nretomarlo cuando quiera.\",\"porque\":\"No se especifica el formato/estructura del “borrador” (solo texto o también metadata como timestamps, idioma, o estado de reconocimiento). Sin eso, la persistencia y la reconstrucción pueden ser inconsistentes entre servicio y panel.\",\"severidad\":\"media\"},{\"tipo\":\"referencia_inventada\",\"cita\":\"- Expone `getColaDemo()` para que el panel pueda leer el estado de la cola.\",\"porque\":\"El contrato declara una función a exponer, pero no existe en el contrato ninguna referencia al archivo existente `src/services/vozService.ts` ni definición previa que garantice que `getColaDemo()` sea parte del diseño actual. El nombre podría ser una invención respecto al estado real del repositorio, generando divergencia con el executor.\",\"severidad\":\"media\"},{\"tipo\":\"caso_faltante\",\"cita\":\"3 · Casos esperados\\n\\n1. El usuario dicta y agota la sesión: el texto queda como borrador pendiente.\\n2. El usuario retoma el borrador: el contenido vuelve al lienzo.\",\"porque\":\"Faltan casos clave para la cola, por ejemplo: usuario agota sesión pero luego retoma y vuelve a agotar otra vez (se reemplaza o se encola), usuario descarta el borrador, recarga la página mientras hay «pendiente», y comportamiento si la recuperación falla (getColaDemo vacío/error).\",\"severidad\":\"alta\"},{\"tipo\":\"contradiccion\",\"cita\":\"- El corte duro del servidor es de **60 segundos**: pasado ese punto la sesión se cierra del lado del\\n  proveedor y no hay reintento posible.\\n- El contador de sesiones por día no cambia.\",\"porque\":\"No se aclara cómo se relaciona el “tope de 30 segundos por turno” con el “corte duro 60 segundos” del servidor. Puede haber inconsistencias sobre qué porción exacta se guardará cuando el proveedor corte a 60s pero el producto limita a 30s.\",\"severidad\":\"media\"}],\"decisiones_faltantes\":[\"Definir el criterio exacto para limitar a 30 segundos de audio por turno (qué métrica usar y cómo se trunca).\",\"Definir qué sucede si el usuario dicta más que el tope: truncar, recortar al final del tope, o partir (si fuera una verdadera cola) en múltiples segmentos.\",\"Definir el formato del “borrador” (solo texto o también metadata como timestamps/idioma/fuentes).\",\"Definir comportamiento ante múltiples agotamientos: ¿se reemplaza el borrador pendiente o se mantiene una cola real?\",\"Definir qué ocurre en refrescos/recargas: ¿se persiste entre sesiones del navegador/usuario y por cuánto tiempo?\",\"Definir manejo de errores para `getColaDemo()` (qué muestra el panel si no hay borrador o si hay fallo).\",\"Aclarar la relación entre el tope de 30s y el corte duro del servidor a 60s (qué se guarda efectivamente y cuándo).\",\"Especificar si hay acción de “descartar” el borrador pendiente o si solo se retoma.\"]}"
+  },
+  "gpt5": {
+    "json": false,
+    "seg": 25.21889328956604,
+    "raw": ""
+  },
+  "mini": {
+    "json": false,
+    "seg": 16.31434440612793,
+    "raw": ""
+  },
+  "grok": {
+    "json": true,
+    "esquema": true,
+    "seg": 98.50075578689575,
+    "encontrados": [
+      "D1",
+      "D2",
+      "D4",
+      "D5",
+      "D6",
+      "D7",
+      "D8"
+    ],
+    "n_defectos": 11,
+    "apto": false,
+    "sobrantes": [
+      "contradiccion | queda guardado como un borrador en el lienzo, marcado "
+    ],
+    "defectos": [
+      {
+        "tipo": "solapamiento",
+        "cita": "Ajusta `src/components/VozPanel.tsx` para mostrar el estado de la cola mientras hay un borrador pendiente.",
+        "porque": "La pieza A y la pieza B escriben el mismo archivo (VozPanel.tsx) en ramas distintas, en contra de «un escritor por archivo». Habrá conflicto de merge y avisos de pendiente duplicados o inconsistentes.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "solapamiento",
+        "cita": "También toca `src/components/VozPanel.tsx` para el aviso de «pendiente».",
+        "porque": "Repite el mismo entregable de UI que ya asignó la pieza A; el panel no tiene dueño único.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "contradiccion",
+        "cita": "**FIRMA:** `src/services/vozService.ts` → `export function guardarColaDemo(texto: string): ColaGuardada`",
+        "porque": "La pieza A pone la cola en vozService.ts y la pieza B entrega src/services/vozCola.ts (nuevo) para lo mismo. No hay fuente de verdad: dos módulos de cola, firmas distintas y riesgo de reimplementar o no encontrar guardarColaDemo/getColaDemo.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "contradiccion",
+        "cita": "**ENTREGABLE:** `src/services/vozCola.ts` (nuevo) + el panel que lo consume.",
+        "porque": "La pieza B se llama «panel» pero crea un servicio nuevo, mientras la pieza A («servicio de cola») también toca el panel. El corte servicio/UI está invertido y duplicado.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "contradiccion",
+        "cita": "Un escritor por archivo: cada pieza va en su rama.",
+        "porque": "Choca con que A y B tocan VozPanel.tsx y ambas deben actualizar docs/PEDIDO-11.md. La regla de un escritor no se puede cumplir con este recorte.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "dependencia_no_declarada",
+        "cita": "Al retomar, llama a `getColaDemo()` de la pieza A para reconstruir el estado.",
+        "porque": "B no puede cerrar sin A, pero el pedido despacha 2 piezas en paralelo («una por agente», cada una en su rama) sin orden, contrato de interfaz compartido ni rama base. getColaDemo además no está en la FIRMA.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "decision_ausente",
+        "cita": "El tope de la cola es de **30 segundos** de audio por turno.",
+        "porque": "No se define qué es un turno, cómo se mide el audio, ni cómo convive con el corte duro de 60 s ni con el agotamiento de sesiones del día. El ejecutor no sabe cuándo cortar, cuánto persistir ni qué descartar.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "decision_ausente",
+        "cita": "export function guardarColaDemo(texto: string): ColaGuardada",
+        "porque": "ColaGuardada no está definida (campos, id, timestamp, estado) y no hay medio de persistencia (localStorage, backend, memoria). getColaDemo() no tiene firma ni valor de vacío.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "contradiccion",
+        "cita": "queda guardado como un borrador en el lienzo, marcado como «pendiente»",
+        "porque": "Si ya está en el lienzo, el caso 2 («el contenido vuelve al lienzo») implica que salió de ahí. No se sabe si el borrador vive en el lienzo, en la cola, o en ambos, ni qué se muestra mientras está pendiente.",
+        "severidad": "media"
+      },
+      {
+        "tipo": "caso_faltante",
+        "cita": "el panel le muestra el aviso y lo manda a cargar su propia clave",
+        "porque": "No se dice si ese flujo sigue, se reemplaza o convive con la cola. Faltan casos: retomar sin clave/sin sesiones, ya hay un pendiente, dictado vacío al cortar, recarga de página, y qué pasa entre 30 s y el corte de 60 s.",
+        "severidad": "media"
+      }
+    ],
+    "raw": "{\"apto\": false, \"defectos\": [{\"tipo\": \"solapamiento\", \"cita\": \"Ajusta `src/components/VozPanel.tsx` para mostrar el estado de la cola mientras hay un borrador pendiente.\", \"porque\": \"La pieza A y la pieza B escriben el mismo archivo (VozPanel.tsx) en ramas distintas, en contra de «un escritor por archivo». Habrá conflicto de merge y avisos de pendiente duplicados o inconsistentes.\", \"severidad\": \"alta\"}, {\"tipo\": \"solapamiento\", \"cita\": \"También toca `src/components/VozPanel.tsx` para el aviso de «pendiente».\", \"porque\": \"Repite el mismo entregable de UI que ya asignó la pieza A; el panel no tiene dueño único.\", \"severidad\": \"alta\"}, {\"tipo\": \"contradiccion\", \"cita\": \"**FIRMA:** `src/services/vozService.ts` → `export function guardarColaDemo(texto: string): ColaGuardada`\", \"porque\": \"La pieza A pone la cola en vozService.ts y la pieza B entrega src/services/vozCola.ts (nuevo) para lo mismo. No hay fuente de verdad: dos módulos de cola, firmas distintas y riesgo de reimplementar o no encontrar guardarColaDemo/getColaDemo.\", \"severidad\": \"alta\"}, {\"tipo\": \"contradiccion\", \"cita\": \"**ENTREGABLE:** `src/services/vozCola.ts` (nuevo) + el panel que lo consume.\", \"porque\": \"La pieza B se llama «panel» pero crea un servicio nuevo, mientras la pieza A («servicio de cola») también toca el panel. El corte servicio/UI está invertido y duplicado.\", \"severidad\": \"alta\"}, {\"tipo\": \"contradiccion\", \"cita\": \"Un escritor por archivo: cada pieza va en su rama.\", \"porque\": \"Choca con que A y B tocan VozPanel.tsx y ambas deben actualizar docs/PEDIDO-11.md. La regla de un escritor no se puede cumplir con este recorte.\", \"severidad\": \"alta\"}, {\"tipo\": \"dependencia_no_declarada\", \"cita\": \"Al retomar, llama a `getColaDemo()` de la pieza A para reconstruir el estado.\", \"porque\": \"B no puede cerrar sin A, pero el pedido despacha 2 piezas en paralelo («una por agente», cada una en su rama) sin orden, contrato de interfaz compartido ni rama base. getColaDemo además no está en la FIRMA.\", \"severidad\": \"alta\"}, {\"tipo\": \"decision_ausente\", \"cita\": \"El tope de la cola es de **30 segundos** de audio por turno.\", \"porque\": \"No se define qué es un turno, cómo se mide el audio, ni cómo convive con el corte duro de 60 s ni con el agotamiento de sesiones del día. El ejecutor no sabe cuándo cortar, cuánto persistir ni qué descartar.\", \"severidad\": \"alta\"}, {\"tipo\": \"decision_ausente\", \"cita\": \"export function guardarColaDemo(texto: string): ColaGuardada\", \"porque\": \"ColaGuardada no está definida (campos, id, timestamp, estado) y no hay medio de persistencia (localStorage, backend, memoria). getColaDemo() no tiene firma ni valor de vacío.\", \"severidad\": \"alta\"}, {\"tipo\": \"contradiccion\", \"cita\": \"queda guardado como un borrador en el lienzo, marcado como «pendiente»\", \"porque\": \"Si ya está en el lienzo, el caso 2 («el contenido vuelve al lienzo») implica que salió de ahí. No se sabe si el borrador vive en el lienzo, en la cola, o en ambos, ni qué se muestra mientras está pendiente.\", \"severidad\": \"media\"}, {\"tipo\": \"caso_faltante\", \"cita\": \"el panel le muestra el aviso y lo manda a cargar su propia clave\", \"porque\": \"No se dice si ese flujo sigue, se reemplaza o convive con la cola. Faltan casos: retomar sin clave/sin sesiones, ya hay un pendiente, dictado vacío al cortar, recarga de página, y qué pasa entre 30 s y el corte de 60 s.\", \"severidad\": \"media\"}, {\"tipo\": \"otro\", \"cita\": \"Toma la sesión con `src/services/sesionVoz.ts`, que ya resuelve el ciclo de vida: llamar a su función `crearSesionVoz()` y usar el token que devuelve.\", \"porque\": \"Guardar una cola al agotar la sesión no explica por qué hay que crear una sesión nueva ni qué hacer con el token. Mezcla ciclo de vida de sesión con persistencia del borrador y no asigna quién cierra/detecta el corte.\", \"severidad\": \"media\"}], \"decisiones_faltantes\": [\"Cuál es el módulo canónico de la cola (vozService.ts vs vozCola.ts) y la firma completa de getColaDemo / ColaGuardada\", \"Quién es el único escritor de src/components/VozPanel.tsx y de docs/PEDIDO-11.md\", \"Orden de despacho A→B (o interfaz congelada) dado que B llama a getColaDemo\", \"Evento que dispara la cola: agotamiento diario, tope 30 s, corte servidor 60 s, o varios\", \"Dónde y cómo se persiste el borrador y qué ocurre al recargar\", \"Si al retomar se crea sesión (¿crearSesionVoz? ¿clave propia?) o solo se restaura texto\", \"Si el aviso de cargar clave propia se mantiene, se mueve o desaparece\", \"Comportamiento si ya existe un pendiente, si el dictado está vacío, y qué se descarta al superar 30 s\"]}"
+  },
+  "deepseek": {
+    "json": true,
+    "esquema": true,
+    "seg": 8.07347822189331,
+    "encontrados": [
+      "D1",
+      "D4",
+      "D5",
+      "D6"
+    ],
+    "n_defectos": 5,
+    "apto": false,
+    "sobrantes": [],
+    "defectos": [
+      {
+        "tipo": "contradiccion",
+        "cita": "El tope de la cola es de **30 segundos** de audio por turno.",
+        "porque": "En la sección de Límites se menciona un corte duro de 60 segundos, generando contradicción sobre el tiempo máximo de sesión/cola.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "dependencia_no_declarada",
+        "cita": "Toma la sesión con `src/services/sesionVoz.ts`, que ya resuelve el ciclo de vida: llamar a su función `crearSesionVoz()` y usar el token que devuelve.",
+        "porque": "Se hace referencia a la función `crearSesionVoz()` y a un token, pero no se declara que dependa de la creación de la sesión ni si debe invocarse antes o después de guardar la cola.",
+        "severidad": "media"
+      },
+      {
+        "tipo": "solapamiento",
+        "cita": "Ajusta `src/components/VozPanel.tsx` para mostrar el estado de la cola mientras hay un borrador pendiente.",
+        "porque": "Ambas piezas (A y B) modifican el mismo archivo `VozPanel.tsx`, lo que puede generar conflictos de merge o duplicación de lógica.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "referencia_inventada",
+        "cita": "Al retomar, llama a `getColaDemo()` de la pieza A para reconstruir el estado.",
+        "porque": "La función `getColaDemo()` no está declarada en la firma de la pieza A; solo se expone `guardarColaDemo`.",
+        "severidad": "alta"
+      },
+      {
+        "tipo": "caso_faltante",
+        "cita": "El usuario dicta y agota la sesión: el texto queda como borrador pendiente.",
+        "porque": "No se especifica qué ocurre si el usuario no alcanza a guardar el borrador (por corte abrupto) o si el texto supera los 30 segundos.",
+        "severidad": "media"
+      }
+    ],
+    "raw": "{\n  \"apto\": false,\n  \"defectos\": [\n    {\n      \"tipo\": \"contradiccion\",\n      \"cita\": \"El tope de la cola es de **30 segundos** de audio por turno.\",\n      \"porque\": \"En la sección de Límites se menciona un corte duro de 60 segundos, generando contradicción sobre el tiempo máximo de sesión/cola.\",\n      \"severidad\": \"alta\"\n    },\n    {\n      \"tipo\": \"dependencia_no_declarada\",\n      \"cita\": \"Toma la sesión con `src/services/sesionVoz.ts`, que ya resuelve el ciclo de vida: llamar a su función `crearSesionVoz()` y usar el token que devuelve.\",\n      \"porque\": \"Se hace referencia a la función `crearSesionVoz()` y a un token, pero no se declara que dependa de la creación de la sesión ni si debe invocarse antes o después de guardar la cola.\",\n      \"severidad\": \"media\"\n    },\n    {\n      \"tipo\": \"solapamiento\",\n      \"cita\": \"Ajusta `src/components/VozPanel.tsx` para mostrar el estado de la cola mientras hay un borrador pendiente.\",\n      \"porque\": \"Ambas piezas (A y B) modifican el mismo archivo `VozPanel.tsx`, lo que puede generar conflictos de merge o duplicación de lógica.\",\n      \"severidad\": \"alta\"\n    },\n    {\n      \"tipo\": \"referencia_inventada\",\n      \"cita\": \"Al retomar, llama a `getColaDemo()` de la pieza A para reconstruir el estado.\",\n      \"porque\": \"La función `getColaDemo()` no está declarada en la firma de la pieza A; solo se expone `guardarColaDemo`.\",\n      \"severidad\": \"alta\"\n    },\n    {\n      \"tipo\": \"caso_faltante\",\n      \"cita\": \"El usuario dicta y agota la sesión: el texto queda como borrador pendiente.\",\n      \"porque\": \"No se especifica qué ocurre si el usuario no alcanza a guardar el borrador (por corte abrupto) o si el texto supera los 30 segundos.\",\n      \"severidad\": \"media\"\n    }\n  ],\n  \"decisiones_faltantes\": [\n    \"¿La cola guarda texto o audio? Se menciona 30 segundos de audio pero se persiste como texto.\",\n    \"¿Qué ocurre si el usuario retoma el borrador y vuelve a agotar la sesión? ¿Se acumulan o se reemplaza?\",\n    \"¿Quién actualiza `docs/PEDIDO-11.md` al finalizar cada pieza? Se asigna a ambas o a una en particular.\"\n  ]\n}"
+  },
+  "g41mini": {
+    "json": true,
+    "esquema": true,
+    "seg": 5.096121788024902,
+    "encontrados": [
+      "D1"
+    ],
+    "n_defectos": 3,
+    "apto": false,
+    "sobrantes": [
+      "decision_ausente | el contador de sesiones por día no cambia. | no se ",
+      "caso_faltante | ## 3 · casos esperados\n\n1. el usuario dicta y agota la"
+    ],
+    "defectos": [
+      {
+        "tipo": "decision_ausente",
+        "cita": "El tope de la cola es de **30 segundos** de audio por turno.",
+        "porque": "No se especifica qué sucede cuando un usuario excede el tope de 30 segundos ni cómo manejar turnos múltiples en la cola.",
+        "severidad": "media"
+      },
+      {
+        "tipo": "decision_ausente",
+        "cita": "El contador de sesiones por día no cambia.",
+        "porque": "No se aclara si retomar un borrador consume una nueva sesión de voz o si hay alguna limitación relacionada a sesiones al retomar.",
+        "severidad": "media"
+      },
+      {
+        "tipo": "caso_faltante",
+        "cita": "## 3 · Casos esperados\n\n1. El usuario dicta y agota la sesión: el texto queda como borrador pendiente.\n2. El usuario retoma el borrador: el contenido vuelve al lienzo.",
+        "porque": "No se menciona qué pasa si el usuario no retoma el borrador o si hay expiración o eliminación automática del borrador pendiente.",
+        "severidad": "media"
+      }
+    ],
+    "raw": "```json\n{\n  \"apto\": false,\n  \"defectos\": [\n    {\n      \"tipo\": \"decision_ausente\",\n      \"cita\": \"El tope de la cola es de **30 segundos** de audio por turno.\",\n      \"porque\": \"No se especifica qué sucede cuando un usuario excede el tope de 30 segundos ni cómo manejar turnos múltiples en la cola.\",\n      \"severidad\": \"media\"\n    },\n    {\n      \"tipo\": \"decision_ausente\",\n      \"cita\": \"El contador de sesiones por día no cambia.\",\n      \"porque\": \"No se aclara si retomar un borrador consume una nueva sesión de voz o si hay alguna limitación relacionada a sesiones al retomar.\",\n      \"severidad\": \"media\"\n    },\n    {\n      \"tipo\": \"caso_faltante\",\n      \"cita\": \"## 3 · Casos esperados\\n\\n1. El usuario dicta y agota la sesión: el texto queda como borrador pendiente.\\n2. El usuario retoma el borrador: el contenido vuelve al lienzo.\",\n      \"porque\": \"No se menciona qué pasa si el usuario no retoma el borrador o si hay expiración o eliminación automática del borrador pendiente.\",\n      \"severidad\": \"media\"\n    }\n  ],\n  \"decisiones_faltantes\": [\n    \"Definir comportamiento cuando el usuario excede los 30 segundos de la cola.\",\n    \"Especificar impacto de retomar borrador en el contador de sesiones diario.\",\n    \"Manejar casos donde el usuario no retoma el borrador (expiración o eliminación).\"\n  ]\n}\n```"
+  }
+}
