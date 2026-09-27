@@ -71,7 +71,7 @@
 | **Slide presentation** | `docs/hackathon/submission/slides-en.pdf` (8 slides, 16:9) |
 | **Video presentation** | to record — script in `VIDEO-SCRIPT-EN.md`, under 3 min, **in English** |
 | **Public GitHub repository** | `github.com/NeonEden/nodeflow-ibm-bob` |
-| **Application URL** | `https://nodeflow-ibm-bob.vercel.app` (web demo: simulates voice) |
+| **Application URL** | `https://nodeflowsss.netlify.app` (web demo: simulates voice) |
 | **Bob evidence (mandatory)** | `bob_sessions/` — ⚠️ the *task session consumption summaries* are still missing: Tasks → select the task → click the task header → screenshot |
 
 ## What we do NOT say (removed on purpose after the audit)

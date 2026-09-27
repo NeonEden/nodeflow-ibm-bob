@@ -16,5 +16,5 @@ pnpm dev   # abre http://localhost:5173
 #   - después de hablar, el turno se cierra y el log muestra `voz(ui).turno.cerrado`.
 
 # Publicar demo en Vercel (solo push)
-git push origin main   # Vercel detecta el `vercel.json` y despliega.
+git push origin main   # Netlify despliega la web del demo desde `main`.
 ```

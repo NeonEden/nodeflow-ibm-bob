@@ -76,7 +76,7 @@ ya tiene la paleta propia; no hace falta diseñar nada.
 ## Links
 
 - Repo: https://github.com/NeonEden/NodeFlow (público, MIT, instalador firmado con auto-update)
-- **Demo online**: https://nodeflow-demo.vercel.app *(lienzo real con 51 nodos + voz AssemblyAI en vivo
+- **Demo online**: https://nodeflowsss.netlify.app *(lienzo real con 51 nodos + voz AssemblyAI en vivo
   desde el navegador; el planificador corre en vivo con un motor real y cae a planes grabados si falla
   o si se supera el tope por IP)*
 
@@ -84,7 +84,7 @@ ya tiene la paleta propia; no hace falta diseñar nada.
 
 - [x] Repo público con commits dentro de la ventana del evento
 - [x] Video MP4 ≤5 min
-- [x] **Demo URL interactiva** → https://nodeflow-demo.vercel.app
+- [x] **Demo URL interactiva** → https://nodeflowsss.netlify.app
 - [ ] Slides PDF
 - [ ] Cover 16:9
 - [ ] Registro en lablab + crear/unirse a un equipo (aplica también si vas solo)

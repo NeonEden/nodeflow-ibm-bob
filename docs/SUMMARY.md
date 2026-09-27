@@ -63,5 +63,5 @@ graph TD
 
 ## Enlaces rápidos
 - Repo: <https://github.com/NeonEden/NodeFlow>  
-- Demo Vercel: <https://nodeflow-demo.vercel.app>  
+- Demo Vercel: <https://nodeflowsss.netlify.app>  
 - Issue #22 (Voice UI) – seguimiento de mejoras.

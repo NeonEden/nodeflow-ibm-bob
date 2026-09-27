@@ -76,7 +76,7 @@ del video es el más caro: hacerlo una vez en lugar de dos es la diferencia entr
 | Video presentation | ❌ falta — guion abajo | Tomás (grabar) |
 | Slide presentation | ❌ falta — se arma en markdown → PDF | asistente |
 | Cover image | ❌ falta | asistente |
-| App URL / plataforma de demo | ✅ **<https://nodeflow-ibm-bob.vercel.app>** (demo web público, sin login) | — |
+| App URL / plataforma de demo | ✅ **<https://nodeflowsss.netlify.app>** (demo web público, sin login) | — |
 | Licencia MIT | ⚠️ verificar que el `LICENSE` sea MIT | asistente |
 | `README` con instrucciones de prueba | ✅ existe (revisar que esté al día) | asistente |
 

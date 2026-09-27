@@ -16,6 +16,10 @@ first, Bob delivered `cff0baa`, and a later revision fixed its stability (`e84fb
 integration landed in `8582026`, the review found nodes were created once per audio segment instead of
 once per turn, and that was fixed in `0e059ed`. Details and the evidence: `docs/hackathon/`.
 
+El sistema de orquestación que sostiene ese flujo —ciclo de vida del pedido, aislamiento por `git worktree`,
+los **cinco niveles de árbitro** (repo → contenido → contrato → integración → post-deploy) y lo que **no** se
+automatiza— está documentado en [`docs/SISTEMA-ORQUESTACION.md`](docs/SISTEMA-ORQUESTACION.md).
+
 - **Stack**: Tauri v2 · Rust (axum, API propia en `127.0.0.1:37371`) · React 19 + React Flow · TypeScript
 - **Voz**: AssemblyAI **Universal-Streaming v3** (WebSocket, token temporal que emite el backend) + TTS
   local Kokoro (paquete descargable, 2,3× tiempo real)
@@ -30,11 +34,17 @@ qué está en [`docs/hackathon/MIGRACION.md`](docs/hackathon/MIGRACION.md). Esta
 
 ## Probarlo en 10 segundos
 
-**[▶ Abrir el demo web](https://nodeflow-ibm-bob.vercel.app)** — se abre en el navegador, sin instalar nada y
-sin pedir login. Muestra la interfaz real con un flujo de voz **simulado** (datos de ejemplo).
+**[▶ Abrir el demo web](https://nodeflowsss.netlify.app)** — se abre en el navegador, sin instalar nada y sin
+crear cuenta: entrás con un clic al **Modo Demo** (sin credenciales).
 
-Para la app de verdad —la que escucha tu voz— o para correr el demo en tu máquina:
-[`docs/COMO-PROBAR.md`](docs/COMO-PROBAR.md).
+Ahí podés **dictar de verdad**. El demo emite su propia sesión de voz temporal (la clave vive en el servidor
+y nunca viaja al bundle, que se puede inspeccionar) con un tope de **30 segundos por sesión y 3 sesiones por
+día** por visitante; cuando se agota, el panel te ofrece cargar tu propia clave. Mientras hablás el lienzo
+dibuja un nodo borrador y al cerrar el turno crea los nodos reales. La interfaz va en **ES / EN** (switch en
+la barra superior, que también traduce el contenido del mapa).
+
+Para la app de verdad —la del escritorio, que corre con tu propio motor de voz— o para levantar el demo en
+tu máquina: [`docs/COMO-PROBAR.md`](docs/COMO-PROBAR.md).
 
 ## Cómo se corre y cómo se verifica
 

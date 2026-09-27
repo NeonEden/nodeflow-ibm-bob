@@ -9,7 +9,7 @@ comprobar que funciona.
 
 ## Opción 1 — El demo web (lo más rápido, cero instalación)
 
-> **URL pública: <https://nodeflow-ibm-bob.vercel.app>** — abrila desde cualquier dispositivo, no pide login
+> **URL pública: <https://nodeflowsss.netlify.app>** — abrila desde cualquier dispositivo, no pide login
 > ni instalar nada. (Las URLs con el sufijo del equipo —`…-tms-7b18.vercel.app`— están detrás de la protección
 > de Vercel; usá siempre la limpia.)
 
