@@ -30,6 +30,7 @@ export type EventoVoz =
   | 'atajo.toggle'
   | 'atajo.ignorado'
   | 'atajo.toque_corto'
+  | 'demo.sinSesion'
   | 'error';
 
 /** Valor de una traza: se recorta y se le sacan los espacios de más (es una línea, no un canal de datos). */

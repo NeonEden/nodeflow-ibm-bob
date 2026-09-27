@@ -136,6 +136,9 @@ const ES = {
   'apikey.guardar': 'Guardar Configuración',
   'apikey.guardado': '¡Guardado!',
   'apikey.guardando': 'Guardando...',
+  'voz.demo.aviso': 'Modo demo: 30 segundos por sesión y 3 por día.',
+  'voz.demo.terminado': 'Se acabaron los 30 segundos del demo. Cargá tu clave de voz para dictar sin límite.',
+  'voz.demo.clave.cta': 'Cargar mi clave de voz',
 
   // --- apariencia
   'apariencia.titulo': 'Apariencia del lienzo',
@@ -357,6 +360,9 @@ const EN: Record<Clave, string> = {
   'apikey.guardar': 'Save Configuration',
   'apikey.guardado': 'Saved!',
   'apikey.guardando': 'Saving...',
+  'voz.demo.aviso': 'Demo mode: 30 seconds per session, 3 per day.',
+  'voz.demo.terminado': 'The 30 seconds of the demo are up. Add your voice key to dictate without a limit.',
+  'voz.demo.clave.cta': 'Add my voice key',
 
   'apariencia.titulo': 'Canvas appearance',
   'apariencia.colores': 'Colors',

@@ -3,7 +3,7 @@ import { X, Mic, Square, Loader2, Sparkles, Check, AlertTriangle, Wand2, Target,
 import { type EstadoVoz } from '../services/speechmaticsRt';
 import { decidirAtajo } from '../utils/toggleVoz';
 import { crearClienteStt, type ClienteStt } from '../services/sttRt';
-import { apiUrl } from '../services/apiBase';
+import { apiUrl, ES_DEMO_WEB } from '../services/apiBase';
 import { trazaVoz } from '../services/trazaVoz';
 import type { FaseTurno } from '../utils/borradorVivo';
 import { getVozEstado, getVozJwt, pedirPlanVoz, describirComando, decir, hablarConElSistema, clasificarParcial, msQuieto, MS_ESTABILIDAD_CLIENTE, MS_UMBRAL_TOGGLE, ErrorOcupado, VozEstado, PlanVoz, VozComando } from '../services/vozService';
@@ -61,6 +61,11 @@ interface VozPanelProps {
   /** El turno se cerró: el borrador vivo deja de tener sentido y se retira del lienzo. */
   onTurnoCerrado?: () => void;
   /**
+   * El visitante del demo web agotó sus 30 s (o el tope diario): se le ofrece cargar SU clave de voz.
+   * Lo maneja App, que es quien tiene el modal de claves.
+   */
+  onPedirClaveVoz?: () => void;
+  /**
    * Decisión FINAL del turno: la que el segmentador devuelve para el texto COMPLETO del dictado, con sus
    * temas. Es la que crea los nodos en el lienzo (pedido 06), y se llama una sola vez por turno.
    *
@@ -113,7 +118,7 @@ const EJEMPLOS = [
  * Panel de Voz (Speechmatics). Hablás, la transcripción aparece en vivo y al cortar el motor
  * propone un PLAN de operaciones sobre el lienzo — que se aprueba antes de aplicarse.
  */
-export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, onPrevisualizar, onAplicarComandos, tituloNodo, preguntaAbierta, onResponder, onInicioConversacion, onTurnoConversacion, pedidoExterno, onParcialVivo, onDecisionParcial, onTurnoCerrado, onTurnoFinal, onFaseTurno }) => {
+export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, onPrevisualizar, onAplicarComandos, tituloNodo, preguntaAbierta, onResponder, onInicioConversacion, onTurnoConversacion, pedidoExterno, onParcialVivo, onDecisionParcial, onTurnoCerrado, onPedirClaveVoz, onTurnoFinal, onFaseTurno }) => {
   // Textos del panel en el idioma activo. La voz (entrada y salida) sigue el mismo idioma desde el
   // backend, así que acá sólo se traduce la interfaz.
   const { t } = useIdioma();
@@ -128,6 +133,11 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
   const [pensando, setPensando] = useState(false);
   const [aplicando, setAplicando] = useState(false);
   const [resultado, setResultado] = useState('');
+  // Demo web: segundos que le quedan al visitante en su sesión de 30 s (null = no hay sesión de demo).
+  // El corte REAL lo impone el proveedor del lado del servidor; esto es el contador visible.
+  const [demoRestante, setDemoRestante] = useState<number | null>(null);
+  const demoTimerRef = useRef<number | null>(null);
+  const demoRestanteRef = useRef(0);
   // Cuando la app te leyó una pregunta, lo próximo que digas es su respuesta (no un plan nuevo).
   const [modoRespuesta, setModoRespuesta] = useState<{ id: string; titulo: string } | null>(null);
   // Modo conversación: turnos encadenados. La app pregunta, escucha, actúa, vuelve a preguntar.
@@ -590,6 +600,24 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
       // El motor lo decide el backend: acá sólo se instancia el cliente del protocolo que devuelva.
       // El aviso se fija antes para que no lo pise el primer `onEstado` (habla antes de escuchar).
       if (sesion.aviso) setDetalleEstado(sesion.aviso);
+      // Demo web: la sesión del visitante dura 30 s. El corte real lo impone el proveedor del lado del
+      // servidor (el token se emite con `max_session_duration_seconds`); esto es el contador visible.
+      if (ES_DEMO_WEB) {
+        if (!sesion.aviso) setDetalleEstado(t('voz.demo.aviso'));
+        demoRestanteRef.current = 30;
+        setDemoRestante(30);
+        if (demoTimerRef.current !== null) window.clearInterval(demoTimerRef.current);
+        demoTimerRef.current = window.setInterval(() => {
+          demoRestanteRef.current -= 1;
+          setDemoRestante(demoRestanteRef.current);
+          if (demoRestanteRef.current <= 0) {
+            if (demoTimerRef.current !== null) window.clearInterval(demoTimerRef.current);
+            demoTimerRef.current = null;
+            void cortarRef.current?.();
+            onPedirClaveVoz?.();
+          }
+        }, 1000);
+      }
       // Identidad de la sesión ANTES de abrir: así todo lo que pasa durante el handshake queda
       // correlacionado con la misma sesión en el log.
       sesionRef.current = nuevoIdSesion();
@@ -721,6 +749,16 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
         setDetalleEstado('');
       }
     } catch (e: any) {
+      // Demo web sin sesión: no es un fallo de la app, es el tope alcanzado o la credencial del sitio
+      // ausente. Se ofrece el modal para seguir con la clave propia en vez de un error seco.
+      if (ES_DEMO_WEB && (e?.motivo === 'tope_diario' || e?.motivo === 'sin_credencial')) {
+        trazaVoz('demo.sinSesion', { motivo: e.motivo });
+        setDetalleEstado(e?.message || t('voz.demo.terminado'));
+        setError('');
+        setEstado('inactivo');
+        onPedirClaveVoz?.();
+        return;
+      }
       trazaVoz('error', { fase: 'abrir', mensaje: e?.message || 'desconocido' });
       setError(e?.message || 'No pude empezar a escuchar.');
       setEstado('error');
@@ -1115,6 +1153,11 @@ export const VozPanel: React.FC<VozPanelProps> = ({ isOpen, onClose, onAplicar, 
                 ? t('voz.hud.pensando')
                 : t('voz.hud.voz')}
           </span>
+          {demoRestante !== null && (
+            <span className="rounded bg-cyan-500/20 px-1.5 py-0.5 text-[10px] font-medium text-cyan-200">
+              {demoRestante}s
+            </span>
+          )}
           {(estado === 'escuchando' || estado === 'conectando') && (
             <button
               onClick={() => void cortarRef.current?.()}

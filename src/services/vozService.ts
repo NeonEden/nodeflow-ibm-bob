@@ -1,4 +1,4 @@
-import { apiUrl } from './apiBase';
+import { apiUrl, ES_DEMO_WEB } from './apiBase';
 import { postAiAction } from './aiApi';
 import type { SesionVoz } from './sttRt';
 
@@ -222,7 +222,16 @@ export async function getVozEstado(): Promise<VozEstado> {
 export async function getVozJwt(): Promise<SesionVoz> {
   const r = await fetch(apiUrl('/api/voz/jwt'));
   const d = await r.json();
-  if (!r.ok || !d.success) throw new Error(d?.error || 'No pude pedir el token de voz.');
+  if (!r.ok || !d.success) {
+    // Modo demo web: el backend no emite sesión cuando el visitante agotó su tope diario o cuando falta
+    // la credencial del sitio. Se propaga el motivo para que el panel abra el modal donde carga su clave.
+    if (ES_DEMO_WEB && (d?.motivo === 'tope_diario' || d?.motivo === 'sin_credencial')) {
+      const e = new Error(d?.aviso || d?.error || 'Sin sesión de demo.') as Error & { motivo?: string };
+      e.motivo = d.motivo;
+      throw e;
+    }
+    throw new Error(d?.error || 'No pude pedir el token de voz.');
+  }
   return d as SesionVoz;
 }
 
