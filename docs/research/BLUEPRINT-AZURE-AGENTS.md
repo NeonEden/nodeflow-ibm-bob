@@ -17,6 +17,15 @@ autores: deep-orq (medición) · Astra/agent-commander (criterio)
    excelentes con **50 TPM**. Un turno de agente con 20 KB de contexto consume ~5.000 tokens: a 50 TPM eso
    son **cien minutos de espera**. Un modelo brillante que no responde a tiempo es un modelo inútil para
    orquestar.
+
+   > **Caso verificado en vivo, mientras se escribía este documento.** El agente auditor del enjambre no
+   > devolvía respuestas a las peticiones que se le enviaban. Su `config.yaml` estaba **correcto**
+   > (`default: gpt-6-astra`, 1000 TPM): el problema era su **sesión guardada**, que tenía fijado
+   > `gpt-5` y Hermes restaura ese modelo al reanudar (*«Model restored from session: gpt-5»*). Con
+   > **50 TPM** y un modelo que agota el presupuesto razonando, el agente quedaba mudo sin dar un solo
+   > error. No falló la configuración: falló **la cuota de un valor heredado por la sesión**. Un
+   > diagnóstico de agentes que empiece por el modelo del `config.yaml` y no por el de la sesión activa
+   > llega a la conclusión equivocada.
 2. **El orden correcto de criterios es: (1) TPM suficiente, (2) respeta structured output, (3) latencia,
    (4) recién ahí, calidad de razonamiento.** Los benchmarks públicos ordenan por lo último y por eso
    llevan a elegir modelos que después no se pueden usar.
