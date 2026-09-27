@@ -34,18 +34,27 @@ del video es el más caro: hacerlo una vez en lugar de dos es la diferencia entr
 > nodo movible y conectable. Sin formularios, sin fricción, sin aprobaciones.
 
 **Long Description**
-> NodeFlow es una app de escritorio (Tauri + React Flow + Rust) para pensar en voz alta sobre un lienzo. Mientras
-> hablás, un segmentador determinista del backend decide si lo que dijiste es una idea, una corrección o ruido, y
-> el lienzo responde en el momento: dibuja un preview de lo que estás entendiendo y, al cerrar el turno, crea los
-> nodos reales —uno por tema— encadenados desde el ancla, movibles y conectables. Todo se puede deshacer con
-> Ctrl+Z, porque la salida sin fricción no es aprobar antes sino poder revertir después.
+> **NodeFlow es el caso real de un workflow de desarrollo asistido por IBM Bob 2.0: transformar una idea en
+> un contrato versionado, implementarlo con Bob y revisar la entrega mediante pruebas y auditoría
+> independiente.** Lo aplicamos al desarrollo de un lienzo por voz; mostramos sus entregas, sus fallos y sus
+> correcciones, sin atribuirle ahorros de tiempo que todavía no medimos.
 >
-> El proyecto se construyó en un hackathon de 48 horas con **IBM Bob 2.0 como compañero de desarrollo**: Bob
-> escribió el segmentador de voz del backend y su endpoint, el cliente del parcial en el frontend, y los cuatro
-> arreglos de UX que salieron de la primera prueba con audio real. El reparto fue deliberado: los contratos
-> (`docs/hackathon/PEDIDO-0*.md`) se commitearon **antes** de tocar código, Bob implementó contra ellos, y una
-> auditoría independiente revisó su entrega. La evidencia de ese uso —qué pidió cada tarea, qué archivos tocó y
-> qué verificó— está en `docs/hackathon/EVIDENCIA-BOB.md` y en las capturas de sus sesiones.
+> **El problema:** un pedido ambiguo no produce una entrega verificable, y el retrabajo se paga tres veces
+> —al implementar, al revisar y al corregir—. Nuestro workflow lo ataca por el principio: la idea se escribe
+> como **contrato commiteado antes de tocar código** (`docs/hackathon/PEDIDO-0*.md`), Bob lo implementa, y una
+> revisión independiente audita la entrega contra ese contrato. Cuando el contrato no fijaba algo (por
+> ejemplo, la cardinalidad de un evento), la auditoría lo encontró **antes** de que llegara a producción.
+>
+> **Bob es el implementador, y cada pedido tiene la misma cadena verificable:** contrato → sesión de Bob →
+> commit de entrega → revisión independiente → corrección. Un pedido completo: el contrato del segmentador de
+> voz se commiteó en `00edcf6`; Bob implementó el módulo y su endpoint y entregó en `cff0baa`; la auditoría
+> encontró un defecto real de temporalidad, corregido en `0e059ed`. El resto está en `docs/hackathon/` con sus
+> entregas, y las capturas de las sesiones de Bob están en `bob_sessions/`.
+>
+> **Lo que se construyó:** un lienzo por voz (Tauri + Rust + React Flow) donde hablás y el canvas se dibuja en
+> vivo: un segmentador determinista del backend decide qué es idea, corrección o ruido; aparece un borrador; y
+> al cerrar el turno cada tema se vuelve un nodo real —encadenado, movible, conectable— con `Ctrl+Z` para
+> revertir. El flujo sin fricción no es aprobar antes: es poder deshacer después.
 
 **Technology & Category Tags**
 > Tauri · Rust · React · TypeScript · React Flow · IBM Bob 2.0 · Speechmatics (STT en streaming) · AssemblyAI ·
@@ -103,4 +112,14 @@ NodeFlow es una app de **escritorio** (Tauri), no una web. Las opciones, de más
 - No se inventan métricas de uso, benchmarks ni usuarios.
 - No se reclama crédito por lo que Bob no tocó: la evidencia dice qué archivos escribió él
   (`docs/hackathon/EVIDENCIA-BOB.md`) y en qué pedido.
-- No se declara `attribution_logs` con datos: está en cero y se declara en cero, con la mitigación que sí existe.
+- No se declara `attribution_logs` con datos: está en cero y se declara en cero. (Y no es el artefacto
+  pedido por el guide: lo que se pide son las capturas del resumen de consumo, en `bob_sessions/`.)
+- **Los números se dicen con su procedencia y sin inflar:** `324/324` y `135/135` son resultados **declarados
+  por las suites de tests** al cerrar cada tanda, no un ahorro medido ni tests escritos íntegramente por Bob;
+  `316/316` fue la verificación posterior del conjunto del segmentador.
+- **El contraste «una tarea entera produjo 0 archivos en 80 llamadas vs. una pieza entregada en 1 intento» es
+  un caso observado**, no un experimento controlado ni un porcentaje de retrabajo ahorrado.
+- **El baseline se delimita:** antes del hackathon la app ya tenía dictado y acciones de voz; lo que se agregó
+  fue el camino completo de voz a grafo (segmentador, borrador en vivo, nodos por tema, flujo sin fricción).
+- **La web es una simulación de voz** (sin backend Rust no hay micrófono): el video muestra la app de
+  escritorio, y el demo web existe para que cualquiera abra el lienzo sin instalar nada.

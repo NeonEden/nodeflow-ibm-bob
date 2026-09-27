@@ -38,11 +38,24 @@ Para la app de verdad —la que escucha tu voz— o para correr el demo en tu m�
 Los tres árbitros de cualquier cambio: **`npx tsc --noEmit`, `npm run build` y `cargo test --lib`**.
 Un cambio sin los tres en verde no está terminado.
 
-## Evidencia del uso de Bob
+## Cómo se construyó esto con IBM Bob 2.0
 
-`bob_sessions/` guarda los exports de la base de Bob (`~/.bob/db/bob.db` → `tasks` y
-`attribution_logs`: archivo, líneas y herramienta). Se generan con `python scripts/bob-evidencia.py`,
-nunca a mano. Ver [`bob_sessions/README.md`](bob_sessions/README.md).
+El workflow que mejoramos es **especificar, implementar y revisar un cambio de software**. Bob es el
+implementador, y cada pedido siguió la misma cadena verificable:
+
+**contrato commiteado → sesión de Bob → commit de entrega → revisión independiente → corrección**
+
+Un pedido completo como ejemplo: el **contrato del segmentador de voz** se commiteó en `00edcf6` *antes*
+de tocar código (`docs/hackathon/PEDIDO-BOB-01.md`); Bob implementó el módulo y su endpoint y entregó en
+`cff0baa`; una revisión independiente encontró un defecto real de temporalidad, que se corrigió en
+`0e059ed`. El resto de los pedidos está en `docs/hackathon/PEDIDO-0*.md` con sus entregas.
+
+**La evidencia obligatoria de la submission** son las capturas del *task session consumption summary* de
+cada tarea de Bob: están en [`bob_sessions/`](bob_sessions/README.md), con el detalle de cómo se
+capturan. Además, y como complemento (no como requisito), `python scripts/bob-evidencia.py` exporta
+desde `~/.bob/db/bob.db` la tabla de tareas y el detalle por archivo.
+
+Qué escribió Bob y qué no: `docs/hackathon/EVIDENCIA-BOB.md`.
 
 ---
 

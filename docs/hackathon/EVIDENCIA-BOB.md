@@ -13,8 +13,11 @@ Todo dato de acá sale de un comando o de una fila de su base; nada está estima
 
 ## 1 · Lo que pide la rúbrica y lo que hay
 
-La rúbrica pide `attribution_logs`: cada fila con el **archivo**, la **rama**, la **herramienta** y el
-**rango de líneas** que Bob tocó.
+El guide oficial **no** menciona `attribution_logs` —la palabra aparece **0 veces** en él (`docs/hackathon/REQUISITOS-BOB.md`)—.
+Lo que la submission exige son las **capturas del `task session consumption summary`** de cada tarea de Bob,
+en `bob_sessions/`. La tabla `attribution_logs` de la base de Bob es un dato adicional que vale la pena
+tener —cada fila con el **archivo**, la **rama**, la **herramienta** y el **rango de líneas**— pero **no es
+lo que se pide**.
 
 **Estado de esa tabla: 0 filas.** No la llenó ninguna de las dos tareas de hoy:
 
