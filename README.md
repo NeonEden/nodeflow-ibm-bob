@@ -16,48 +16,48 @@ first, Bob delivered `cff0baa`, and a later revision fixed its stability (`e84fb
 integration landed in `8582026`, the review found nodes were created once per audio segment instead of
 once per turn, and that was fixed in `0e059ed`. Details and the evidence: `docs/hackathon/`.
 
-El sistema de orquestación que sostiene ese flujo —ciclo de vida del pedido, aislamiento por `git worktree`,
-los **cinco niveles de árbitro** (repo → contenido → contrato → integración → post-deploy) y lo que **no** se
-automatiza— está documentado en [`docs/SISTEMA-ORQUESTACION.md`](docs/SISTEMA-ORQUESTACION.md).
+The orchestration system behind that flow —the request lifecycle, isolation by `git worktree`, the **five levels
+of verification** (repo → content → the contract's own cases → the integrated tree → the deployed product) and
+what is **not** automated— is documented in [`docs/SISTEMA-ORQUESTACION.md`](docs/SISTEMA-ORQUESTACION.md).
 
-- **Stack**: Tauri v2 · Rust (axum, API propia en `127.0.0.1:37371`) · React 19 + React Flow · TypeScript
-- **Voz**: AssemblyAI **Universal-Streaming v3** (WebSocket, token temporal que emite el backend) + TTS
-  local Kokoro (paquete descargable, 2,3× tiempo real)
-- **Reglas de la casa**: el modelo propone y el código valida (ADR `0003`); sin LLM en el camino
-  caliente (ADR `0005`); ruteo híbrido, primero local (ADR `0004`); todo lo que se mide queda escrito.
-- **Contexto del evento**: este repo es el **oficial** para el hackathon IBM Bob 2.0 (clon del template
-  oficial). El repo de trabajo anterior queda como laboratorio; acá se construye.
+- **Stack**: Tauri v2 · Rust (axum, its own API on `127.0.0.1:37371`) · React 19 + React Flow · TypeScript
+- **Voice**: AssemblyAI **Universal-Streaming v3** (WebSocket, temporary token issued by the backend) + local
+  Kokoro TTS (downloadable package, 2.3× real time)
+- **House rules**: the model proposes and the code validates (ADR `0003`); no LLM in the hot path (ADR `0005`);
+  hybrid routing, local first (ADR `0004`); everything that is measured gets written down.
+- **Event context**: this repository is the **official** one for the IBM Bob 2.0 hackathon (clone of the official
+  template). The earlier working repository stays as the lab; the work happens here.
 
-Este repositorio se migró desde el repo de trabajo el **26/09/2026**: qué entró, qué quedó afuera y por
-qué está en [`docs/hackathon/MIGRACION.md`](docs/hackathon/MIGRACION.md). Estado y plan vigente:
+This repository was migrated from the working repo on **2026-09-26**: what came in, what stayed out and why is in
+[`docs/hackathon/MIGRACION.md`](docs/hackathon/MIGRACION.md). Current state and plan:
 [`docs/PLAN-LIENZO-EN-VIVO.md`](docs/PLAN-LIENZO-EN-VIVO.md).
 
-## Probarlo en 10 segundos
+## Try it in 10 seconds
 
-**[▶ Abrir el demo web](https://nodeflowsss.netlify.app)** — se abre en el navegador, sin instalar nada y sin
-crear cuenta: entrás con un clic al **Modo Demo** (sin credenciales).
+**[▶ Open the web demo](https://nodeflowsss.netlify.app)** — it runs in the browser, nothing to install and no
+account: one click gets you into **Demo Mode** (no credentials).
 
-Ahí podés **dictar de verdad**. El demo emite su propia sesión de voz temporal (la clave vive en el servidor
-y nunca viaja al bundle, que se puede inspeccionar) con un tope de **30 segundos por sesión y 3 sesiones por
-día** por visitante; cuando se agota, el panel te ofrece cargar tu propia clave. Mientras hablás el lienzo
-dibuja un nodo borrador y al cerrar el turno crea los nodos reales. La interfaz va en **ES / EN** (switch en
-la barra superior, que también traduce el contenido del mapa).
+There you can **dictate for real**. The demo issues its own temporary speech session (the key lives on the server
+and never travels into the bundle, which you can inspect) with a cap of **30 seconds per session and 3 sessions
+per day** per visitor; when it runs out, the panel offers you to bring your own key. While you speak the canvas
+draws a draft node, and when the turn closes it creates the real nodes. The interface ships in **ES / EN** (the
+switch in the top bar also translates the content of the map).
 
-Para la app de verdad —la del escritorio, que corre con tu propio motor de voz— o para levantar el demo en
-tu máquina: [`docs/COMO-PROBAR.md`](docs/COMO-PROBAR.md).
+For the real thing —the desktop app, running your own speech engine— or to run the demo on your machine:
+[`docs/COMO-PROBAR.md`](docs/COMO-PROBAR.md).
 
-## Cómo se corre y cómo se verifica
+## How it runs and how it is verified
 
-| Para qué | Comando |
+| What for | Command |
 |---|---|
-| App completa en desarrollo | `npx tauri dev` (el watcher recompila Rust solo) |
-| Tipos del frontend | `npx tsc --noEmit` |
-| Tests del frontend | `npx vitest run` |
-| Tests de Rust | `cargo test --manifest-path src-tauri/Cargo.toml --lib` |
-| Compilar el frontend | `npm run build` |
+| Full app in development | `npx tauri dev` (the watcher rebuilds Rust on its own) |
+| Frontend types | `npx tsc --noEmit` |
+| Frontend tests | `npx vitest run` |
+| Rust tests | `cargo test --manifest-path src-tauri/Cargo.toml --lib` |
+| Build the frontend | `npm run build` |
 
-Los tres árbitros de cualquier cambio: **`npx tsc --noEmit`, `npm run build` y `cargo test --lib`**.
-Un cambio sin los tres en verde no está terminado.
+The three arbiters of any change: **`npx tsc --noEmit`, `npm run build` and `cargo test --lib`**. A change
+without all three green is not finished.
 
 ## How IBM Bob 2.0 was used
 
@@ -73,16 +73,16 @@ did not) is in `docs/hackathon/EVIDENCIA-BOB.md`. Note the limits we state on pu
 no subagents are attributed to Bob, and no credit is claimed for the transcription or speech engines —
 those are hired services.
 
-**La evidencia obligatoria de la submission** son las capturas del *task session consumption summary* de
-cada tarea de Bob: están en [`bob_sessions/`](bob_sessions/README.md), con el detalle de cómo se
-capturan. Además, y como complemento (no como requisito), `python scripts/bob-evidencia.py` exporta
-desde `~/.bob/db/bob.db` la tabla de tareas y el detalle por archivo.
+**The submission's mandatory evidence** is the screenshots of Bob's *task session summary* for each task: they
+live in [`bob_sessions/`](bob_sessions/README.md), with the detail of how they are captured. As a complement
+(not a requirement), `python scripts/bob-evidencia.py` exports the task table and the per-file detail from
+`~/.bob/db/bob.db`.
 
-Qué escribió Bob y qué no: `docs/hackathon/EVIDENCIA-BOB.md`.
+What Bob wrote and what it did not: `docs/hackathon/EVIDENCIA-BOB.md`.
 
 ---
 
-# (Contenido del template oficial de IBM, conservado)
+# (Official IBM template content, kept as-is)
 
 # IBM Hackathon GitHub Project Template
 
