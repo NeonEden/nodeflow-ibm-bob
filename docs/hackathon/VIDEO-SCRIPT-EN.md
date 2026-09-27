@@ -1,35 +1,41 @@
 # Video script — 3 minutes, in English
 
-> The jury reads English. This script is the **English** version of the montage that came out of the
-> gpt-6-astra session (`docs/hackathon/PLAN-ASTRA-bob-hackathon.md`, §4), and it follows the reframing:
-> **open with the developer workflow, not with the canvas.** Bob must appear early — not in the last 20
-> seconds — and every number must be said with its source.
+> Rewritten after the judge audit. Two rules it enforces: **Bob appears before minute 1**, and **every
+> number is said with its source** — tests are test results, not savings. Claims that could not be
+> accredited were **removed**, not softened with a disclaimer.
 >
-> **Setup before recording:** app in **English** (the ES/EN switch is in the top bar), vault with some
-> nodes already there, Bob IDE open on the task list, terminal closed or minimised, notifications off.
+> **Before recording:** app in **English** (the ES/EN switch is in the top bar), a few nodes already on the
+> canvas, Bob IDE open on the task list, notifications off, terminal minimised.
 
-| Time | What is on screen | What you say |
+| Time | On screen | What you say |
 |---|---|---|
-| **0:00–0:20** | You, then the repo/README showing the chain: *contract → Bob implements → commit → independent review → fix* | «Hi, I'm Tomás. This is NodeFlow, and it's the real case of a development workflow: turning an idea into a **versioned contract**, letting **IBM Bob 2.0** implement it, and auditing the delivery with tests and an independent review. The problem we attacked is the ambiguous request that never produces a verifiable deliverable.» |
-| **0:20–0:55** | The desktop app. You press `Ctrl+Alt+Space` and **dictate a concrete software change** in English, e.g. *"Add a rate limiter to the voice endpoint"*. The draft appears and grows; when you close the turn, **two real nodes** land on the canvas, chained. You drag one, then hit `Ctrl+Z`. | «While I speak, the canvas sketches what it is understanding. When I close the idea, every topic becomes a real node — chained, draggable, connectable. And if it got it wrong, `Ctrl+Z`. Frictionless doesn't mean approving first: it means being able to undo afterwards.» |
-| **0:55–1:40** | **Bob IDE**, already open. Scroll the task list, open the contract file `docs/hackathon/PEDIDO-BOB-01.md` in the editor, show the **task session consumption summary**, and point at the commit. | «This is where Bob worked. Before any code, I committed the contract for the voice segmenter — you can see the commit is older than Bob's delivery. Bob implemented the module and its endpoint: that's `cff0baa`. And this is its session summary — the consumption the hackathon asks for.» |
-| **1:40–2:15** | The terminal or GitHub showing the commit `cff0baa`, then the review finding and the fix `0e059ed` (the diff of the timing defect). | «Then an independent review audited the delivery against the contract and found a real defect: the node creation was firing per audio segment instead of once per turn. That got fixed before it reached production. That is the whole point of writing the contract first.» |
-| **2:15–2:45** | The slides: the four numbers (324/324 · 135/135 · 23 PRs · 48 h) and the task-vs-piece case. | «The numbers are test-suite results, not a saving we measured: 324 of 324 Rust tests, 135 of 135 frontend tests, 23 merged pull requests in 48 hours. And one case we did measure: a whole task handed to a coding agent produced zero files in eighty tool calls — the same work as a single pure function with an enumerated contract was delivered in one attempt.» |
-| **2:45–3:00** | The canvas again, zoomed out with all your nodes visible; then the repo URL on screen. | «The process is reusable; the product works. The repo is public, and the app runs on Windows today. What this proves is the process applied to this project — not a general claim about productivity.» |
+| **0:00–0:18** | You, then the repo README showing the chain. | «We used IBM Bob to build NodeFlow from written specifications. Every request became a contract, Bob implemented it, and a different agent reviewed the code. And here is the problem we went after: an unclear request costs you three times — when you build it, when you review it, and when you fix it.» |
+| **0:18–0:50** | The desktop app. `Ctrl+Alt+Space`, then dictate **in Spanish** — and say so out loud. The draft appears as you speak; close the turn; the nodes land chained; drag one; `Ctrl+Z`. | «I'll dictate in Spanish — the segmenter's rules are written for Spanish — and the interface stays in English. A draft node appears as I speak. When I stop, each topic becomes a real node, chained and draggable. Nodes are created without a confirmation step: my safety net is that I can undo them.» |
+| **0:50–1:30** | **Bob IDE**: the task list, then `docs/hackathon/PEDIDO-BOB-01.md` open in the editor, the commit date, and the **task usage summary**. | «This is where Bob worked. Before any code, I committed the contract for the voice segmenter — this commit is older than Bob's delivery. Bob implemented the module and its endpoint: that is `cff0baa`. And this is Bob's task usage summary, which the hackathon asks for as evidence. The hand-off from my idea to that contract is manual: I write it and I commit it.» |
+| **1:30–2:00** | The git log: `8582026`, then the fix `0e059ed` and its diff. | «Then a different agent reviewed the delivery. On a second request — creating the nodes when the turn closes — the review found that nodes were being created once per audio segment instead of once per turn. We fixed it: `0e059ed`. That is the whole point of reviewing against a written contract.» |
+| **2:00–2:35** | The slides: the four recorded figures on screen, readable. Do not read hashes aloud. | «These are recorded test results and the pull-request history: 324 of 324 Rust tests on `0d05b2f`, 135 of 135 frontend tests on `a42be37`, twenty-five merged pull requests across the two days, and one defect caught in review before merging. They are verification results — not a measured time saving.» |
+| **2:35–2:55** | The canvas zoomed out with all the nodes visible, then the repo URL. | «The procedure is reusable: write the contract, commit it first, let the agent implement against it, have a different agent audit it, then fix and record it. The product works and the repo is public. What this proves is the process applied to this project — not a general claim about productivity.» |
 
-## Traps to avoid (from the audit)
+## Do not say, and why
 
-- **Do not** present *voice → contract → Bob* as an automatic integration. The steps are manual: say it.
-- **Bob appears before minute 1.** If he shows up at the end, the theme («showcase Bob as a core
-  component») fails on camera.
-- **Say the numbers with their source** ("test-suite results", "one case we measured"). Never say "we
-  saved X %".
-- **Don't claim** parallelism or Bob subagents: there is no record of that.
-- The **web demo simulates voice** (no microphone without the Rust backend). If you show it, say so; the
-  recording shows the desktop app.
-- Keep it under **3:00**. Judges watch many.
+- **«Before it reached production»** — not accredited. What the commits show is that the fix landed before
+  merge. Say «we fixed it before merging».
+- **The 80-tool-calls comparison** — the primary record is not in this repository and that piece was
+  written by a different agent, not Bob. **Cut it entirely.**
+- **«Bob wrote the voice engine»** — Bob implemented the **segmenter and the partial-result client**.
+  Transcription (AssemblyAI / Speechmatics) and speech are hired services.
+- **«Signed release»** — there is a published Windows installer; Authenticode signing is not accredited.
+- **PR counts as output** — 25 merged PRs is activity, and it includes docs and dependencies.
 
-## Spanish version (for the AssemblyAI submission, Wed 30/09)
+## Rules that make the take easy
 
-The same take works: that hackathon wants the **voice experience** in front. Its description starts from
-the canvas and the flow being frictionless; the Bob part becomes the closing instead of the opening.
+- **Dictate slowly and stop cleanly.** The demo lives on the turn closing, so leave a beat before you
+  release the shortcut.
+- **English for the narration, Spanish for the dictation** — and say why. Promising English segmentation
+  because the UI is bilingual would be a claim we cannot back.
+- **Burn in English subtitles** (two lines max). Put the commit hashes in the subtitle, not in your voice.
+
+## The other hackathon (AssemblyAI, Wed 30/09)
+
+Same take, different edit: that one wants the **voice experience** in front, so the canvas goes first and
+Bob becomes the closing. Its submission is in English too.

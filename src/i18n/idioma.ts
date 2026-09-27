@@ -16,7 +16,13 @@ export const IDIOMAS: { id: Idioma; etiqueta: string; corto: string }[] = [
   { id: 'en', etiqueta: 'English', corto: 'EN' },
 ];
 
-export const POR_DEFECTO: Idioma = 'es';
+/**
+ * Idioma con el que arranca la app cuando el navegador no está en español. Es 'en' a propósito: el
+ * público del repo y de la demo web es internacional (el jurado del hackathon lee inglés), y un
+ * navegador en fr, de, pt o cualquier otro idioma aterrizaba en español. Un navegador en español
+ * sigue arrancando en español.
+ */
+export const POR_DEFECTO: Idioma = 'en';
 
 /**
  * Voz de Kokoro por idioma. El switch no es sólo cosmético: la frase tiene que sonar nativa en los
@@ -37,7 +43,8 @@ function leerInicial(): Idioma {
     /* sin localStorage (o bloqueado): se sigue con el idioma del sistema */
   }
   const navegador = typeof navigator !== 'undefined' ? navigator.language.slice(0, 2).toLowerCase() : '';
-  return navegador === 'en' ? 'en' : POR_DEFECTO;
+  // Sólo un navegador en español arranca en español; el resto cae en el idioma por defecto (inglés).
+  return navegador === 'es' ? 'es' : POR_DEFECTO;
 }
 
 let actual: Idioma = leerInicial();
