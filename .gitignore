@@ -149,3 +149,6 @@ cerebro/
 
 # Config local de Vercel (ids de proyecto, no van al repo)
 .vercel/
+
+# Local Netlify folder
+.netlify

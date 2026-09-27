@@ -1,0 +1,25 @@
+# Configuración de despliegue del DEMO WEB de NodeFlow.
+#
+# Por qué existe este archivo (medido 27/09/2026): el sitio `nodeflowsss` estaba conectado a GitHub
+# SIN build command ni publish dir, así que Netlify publicaba la RAÍZ del repo tal cual venía del
+# clonado. Consecuencia medida contra el sitio en vivo: `/src/App.tsx` respondía 200 con 215 KB de
+# TSX crudo, `/package.json` 200, `/src-tauri/tauri.conf.json` 200 — y `/assets/index-*.js` 404.
+# El navegador pedía `/src/main.tsx` (JSX/TS, que no es JavaScript válido), no ejecutaba nada y el
+# `<div id="root">` quedaba vacío: la página se veía en blanco.
+#
+# El front se compila a `demo/public` (estático + mock API). Ver `demo/build.mjs` y `demo/README.md`.
+
+[build]
+  # El bundle del demo se construye con el mismo front de la app apuntando al API simulado
+  # (`VITE_API_BASE=same-origin`). `demo/public` se versiona a propósito (ver .gitignore).
+  command = "node demo/build.mjs"
+  publish = "demo/public"
+
+[functions]
+  directory = "netlify/functions"
+  # esbuild resuelve el import relativo a `demo/lib/mockApi.mjs` al empaquetar, pero el mock lee las
+  # fixtures con `readdirSync`/`readFileSync` EN TIEMPO DE IMPORT (`const FIXTURAS = cargarFixtures()`).
+  # Sin esto el paquete sale con el bundle solo, el readdir lanza y la función muere en la inicialización
+  # (medido: 502 en /api/*, `api.zip` sin ningún .json adentro).
+  included_files = ["demo/fixtures/**", "demo/lib/**"]
+  node_bundler = "esbuild"
