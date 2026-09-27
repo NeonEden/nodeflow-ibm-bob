@@ -156,17 +156,58 @@ Ajustes concretos que propongo:
 
 ## 4 · FASE 3 · Duración de los créditos y roadmap
 
-### 4.1 · Estimación de crédito
+### 4.1 · Precios oficiales y estimación de crédito
 
-El crédito disponible es de **200 USD** (dato del dueño de la cuenta). Con este perfil de uso —
-orquestación frecuente, ejecución de piezas acotadas, sin bucles largos — el gasto real depende de los
-precios por millón de tokens de cada deployment, que **no están medidos en este documento**: salen de la
-página de precios de Azure y se están compilando con fuente. Lo que sí se puede afirmar hoy:
+Precios de la **página oficial de Azure OpenAI** (consultada 2026-09-27, `azure.microsoft.com/en-us/pricing/details/cognitive-services/openai-service/`), por millón de tokens, Global Standard:
 
-- El gasto se concentra en el **orquestador**, no en el ejecutor: el orquestador arrastra el contexto largo
-  en cada turno (~78 KB fijos). Bajar eso rinde más que cambiar de modelo.
+| Modelo | Input | Cached input | Output |
+|---|---|---|---|
+gpt-5.5 | $5,00 | $0,50 | $30,00 |
+**gpt-5.4 (<272k)** | **$2,50** | **$0,25** | **$15,00** |
+gpt-5.2 | $1,75 | — | $15,40 |
+gpt-4.1 | $2,00 | $0,50 | $8,00 |
+gpt-4o | $2,50 | $1,25 | $10,00 |
+gpt-4o-mini | $0,15 | $0,075 | $0,60 |
+o3 | $2,00 | $0,50 | $8,00 |
+o4-mini | $1,10 | $0,28 | $4,40 |
+
+> **Nota sobre gpt-6-astra y gpt-5.4-nano**: son deployments nuevos y **no figuran** en la página de
+> precios consultada. Sus tarifas no están verificadas acá; gpt-5.4 se usa como cota superior razonable
+> porque comparte familia. Los precios de **Llama 3.3, DeepSeek R1/V3, Phi-4 y Mistral Large** tampoco se
+> pudieron verificar: la página de precios de Foundry devolvió `403` y el catálogo `ai.azure.com` requiere
+> sesión. Y no es un hueco grave: **ninguno de esos modelos está desplegado en esta suscripción**, así que
+> ninguno está disponible para usar hoy.
+
+**El costo, calculado sobre el perfil real** (contexto fijo medido: 78 KB ≈ **21.667 tokens de entrada por turno**, más 2.000 tokens de salida):
+
+| Modelo | $ por turno de orquestación | Turnos con los 200 USD |
+|---|---|---|
+gpt-5.5 | $0,168 | **1.188** |
+**gpt-5.4** | **$0,084** | **2.376** |
+gpt-5.2 | $0,069 | 2.910 |
+gpt-4.1 | $0,059 | 3.370 |
+gpt-4o | $0,074 | 2.696 |
+gpt-4o-mini | **$0,0044** | **44.943** |
+
+*(Verificado a mano: 21.667 × $2,50/M + 2.000 × $15/M = $0,0842.)*
+
+**Una pieza de ejecución** (contrato de 6 KB de entrada + diff de 4 KB de salida) cuesta **$0,0009** con un
+modelo económico. La relación que gobierna todo:
+
+> **Un turno de orquestación cuesta como ~92 piezas de ejecución.** La ejecución es el **1,09 %** del costo
+> de un turno. En otras palabras: optimizar el ejecutor es ruido; **el gasto está en el contexto que el
+> orquestador reenvía en cada turno.**
+
+Y el corolario incómodo: bajar el contexto no rinde tanto como parece. **Reducir de 78 KB a 39 KB baja el
+turno de $0,0842 a $0,0792 — un 6 %**, porque la salida (2.000 tokens × $15/M = $0,03) pesa tanto como
+media entrada. **La palanca real es la cantidad de turnos, no su tamaño.**
+
 - Los deployments de **50 TPM** no gastan crédito de forma apreciable porque **no se pueden usar**: el
   cuello es la cuota, no el presupuesto.
+- Conclusión de asignación: **2.376 turnos de orquestación con gpt-5.4**, o **casi 45.000 con un
+  gpt-4o-mini** como ejecutor para las tareas mecánicas. La cuota de 200 USD no se agota por trabajar: se
+  agota por **orquestar de más** — sesiones largas, contexto que se reenvía sin necesidad, agentes que
+  exploran en vez de leer su contrato.
 
 ### 4.2 · Roadmap de migración (paso a paso, sin romper lo que funciona)
 
@@ -195,8 +236,17 @@ página de precios de Azure y se están compilando con fuente. Lo que sí se pue
 
 ## Anexo · Lo que este documento NO afirma
 
-- No hay precios por millón de tokens medidos acá: salen de la fuente pública y quedan citados aparte.
+- **Precios**: los de la tabla 4.1 salen de la página oficial de Azure OpenAI y están citados. **No** hay
+  precios verificados de `gpt-6-astra`, `gpt-5.4-nano`, ni de los modelos de Foundry (Llama, DeepSeek,
+  Phi, Mistral): sus páginas no están públicas o requieren sesión. Los cálculos de costo usan gpt-5.4 como
+  cota; con las tarifas reales de los deployments propios pueden bajar, no subir.
 - La prueba de tool calling **no** midió capacidad real (el prompt no la exigía); sólo midió que astra no
   puede recibir tools con razonamiento, con su error textual.
 - Las latencias son **una sola medición por deployment**, sin repetición ni percentiles. Sirven para
   descartar, no para prometer.
+- La estimación de turnos usa un perfil de contexto **medido en este perfil** (78 KB), no una encuesta de
+  uso: es una cota de orden de magnitud, no una factura.
+- **Un dato del subagente investigador se descartó**: reportó GPT-5 a $1,25/$10 con fuente `metatext.io`
+  (tercero), mientras la página oficial de Azure dice $2,50/$15 para gpt-5.4. Se conservó el dato oficial.
+  Lección: cuando el encargo pide fuente oficial, **una fuente de terceros no cumple el encargo** aunque el
+  número sea plausible.
