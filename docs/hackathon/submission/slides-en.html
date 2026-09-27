@@ -13,7 +13,7 @@
   .slide {
     position: relative;
     width: 338.7mm; height: 190.5mm;
-    padding: 16mm 18mm;
+    padding: 15mm 18mm;
     background: #0f172a;
     page-break-after: always;
     overflow: hidden;
@@ -24,35 +24,36 @@
     background: linear-gradient(90deg, #6366f1, #8b5cf6, #34d399); }
 
   h1 { font-size: 37pt; line-height: 1.08; margin: 0 0 6mm; letter-spacing: -0.5pt; }
-  h2 { font-size: 24pt; margin: 0 0 4mm; letter-spacing: -0.3pt; }
+  h2 { font-size: 23pt; line-height: 1.15; margin: 0 0 4mm; letter-spacing: -0.3pt; }
   h2 .k { color: #8b5cf6; }
-  p  { font-size: 15.5pt; line-height: 1.5; margin: 0 0 3.5mm; color: #cbd5e1; }
+  p  { font-size: 14.5pt; line-height: 1.48; margin: 0 0 3.2mm; color: #cbd5e1; }
   .lead { font-size: 18pt; color: #e2e8f5; }
-  .muted { color: #94a3b8; font-size: 13pt; }
+  .muted { color: #94a3b8; font-size: 12.5pt; }
   strong { color: #fff; }
-  .acc { color: #a5b4fc; }
+  .acc { color: #a5b4fc; font-family: Consolas, "Courier New", monospace; font-size: 12.5pt; }
 
-  .kick { font-size: 12pt; letter-spacing: 2.6pt; text-transform: uppercase; color: #8b5cf6; margin-bottom: 5mm; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; flex: 1; }
-  .card { background: #1e293b; border: 1px solid #334155; border-radius: 4mm; padding: 7mm; }
-  .card h3 { margin: 0 0 3mm; font-size: 16pt; color: #fff; }
-  .card p { font-size: 13pt; margin: 0; color: #cbd5e1; }
-  ul { margin: 0; padding-left: 7mm; }
-  li { font-size: 14.5pt; line-height: 1.45; margin-bottom: 2.6mm; color: #cbd5e1; }
+  .kick { font-size: 12pt; letter-spacing: 2.6pt; text-transform: uppercase; color: #8b5cf6; margin-bottom: 4.5mm; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9mm; }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 4mm; padding: 6mm; }
+  .card h3 { margin: 0 0 2.8mm; font-size: 15pt; color: #fff; }
+  .card p { font-size: 12pt; margin: 0; color: #cbd5e1; }
+  ul { margin: 0; padding-left: 6.5mm; }
+  li { font-size: 13pt; line-height: 1.4; margin-bottom: 2.2mm; color: #cbd5e1; }
   li strong { color: #fff; }
 
-  .chain { display: flex; align-items: center; gap: 3mm; flex-wrap: wrap; margin: 5mm 0 4mm; }
-  .node { background: #1e293b; border: 1px solid #4f46e5; border-radius: 3mm; padding: 4mm 5mm; font-size: 13.5pt; color: #e2e8f5; }
+  .chain { display: flex; align-items: center; gap: 2.5mm; flex-wrap: wrap; margin: 3.5mm 0 3mm; }
+  .node { background: #1e293b; border: 1px solid #4f46e5; border-radius: 3mm; padding: 3.2mm 4.2mm; font-size: 12pt; color: #e2e8f5; }
   .node.hi { border-color: #8b5cf6; background: #221c3f; }
-  .arrow { color: #8b5cf6; font-size: 16pt; }
+  .arrow { color: #8b5cf6; font-size: 15pt; }
 
-  .num { font-size: 30pt; color: #fff; font-weight: 600; letter-spacing: -1pt; }
-  .nlabel { font-size: 12pt; color: #94a3b8; }
+  .num { font-size: 27pt; color: #fff; font-weight: 600; letter-spacing: -1pt; }
+  .nlabel { font-size: 10.5pt; color: #94a3b8; line-height: 1.25; }
   /* Height capped on purpose: full width (302mm) the shot was ~189mm tall and did not fit the
-     190.5mm page — it was being clipped silently. At 86mm it fits. */
-  .shot { border: 1px solid #334155; border-radius: 3mm; width: 100%; height: 86mm;
+     190.5mm page — it was being clipped silently. At 72mm it fits and shows the top of the canvas. */
+  .shot { border: 1px solid #334155; border-radius: 3mm; width: 100%; height: 72mm;
           object-fit: cover; object-position: top left; display: block; }
-  .foot { margin-top: auto; padding-top: 4mm; border-top: 1px solid #1e293b; font-size: 11.5pt; color: #64748b; display: flex; justify-content: space-between; }
+  .caption { font-size: 10.5pt; color: #64748b; margin: 2mm 0 0; }
+  .foot { margin-top: auto; padding-top: 3.5mm; border-top: 1px solid #1e293b; font-size: 11pt; color: #64748b; display: flex; justify-content: space-between; }
 
   .cover { justify-content: center; background: radial-gradient(1200px 700px at 78% 20%, #221c3f 0%, #0f172a 60%); }
   .cover h1 { font-size: 46pt; }
@@ -67,56 +68,60 @@
 <section class="slide cover">
   <div class="brand"><div class="logo">NF</div><div class="kick" style="margin:0">IBM Bob 2.0 Hackathon · Sep 27, 2026</div></div>
   <h1>NodeFlow</h1>
-  <p class="lead" style="max-width:250mm">The real case of a development workflow assisted by <strong>IBM Bob 2.0</strong>:
-  turn an idea into a <strong>versioned contract</strong>, have Bob implement it, and audit the delivery with
-  tests and an independent review.</p>
-  <p class="muted" style="margin-top:6mm">Tauri · Rust · React Flow · TypeScript &nbsp;·&nbsp; public repo &nbsp;·&nbsp; web demo, nothing to install</p>
+  <p class="lead" style="max-width:252mm">We built NodeFlow from <strong>written specifications</strong>: every request
+  became a versioned contract, <strong>IBM Bob 2.0</strong> implemented it, and an independent review audited the
+  delivery against that same text.</p>
+  <p class="muted" style="margin-top:5mm">Tauri · Rust · React Flow · TypeScript &nbsp;·&nbsp; public repo &nbsp;·&nbsp; web demo, nothing to install</p>
 </section>
 
 <!-- 2 · The problem -->
 <section class="slide">
   <div class="kick">The problem</div>
-  <h2>An ambiguous request does not produce a verifiable deliverable — and rework gets paid three times</h2>
+  <h2>An unclear request creates extra work in implementation, in review and in fixes</h2>
   <div class="grid2">
     <div class="card">
       <h3>What it costs today</h3>
       <ul>
-        <li><strong>Implementing</strong>: you build too much or too little, because the scope was never written down.</li>
-        <li><strong>Reviewing</strong>: there is nothing to compare against, so review turns into opinion.</li>
-        <li><strong>Fixing</strong>: the defect shows up late, when code already sits on top of it.</li>
+        <li><strong>Implementation</strong>: you build too much or too little, because the scope was never written down.</li>
+        <li><strong>Review</strong>: there is nothing to compare against, so review turns into opinion.</li>
+        <li><strong>Fixes</strong>: the defect shows up late, when other code already sits on top of it.</li>
       </ul>
     </div>
     <div class="card">
-      <h3>What we did differently</h3>
-      <p>The idea is written as a <strong>contract committed before touching code</strong>. The agent implements
-      against that contract and an <strong>independent review</strong> audits the delivery against the same text.</p>
-      <p style="margin-top:4mm">When the contract left something open — the cardinality of an event — the review
-      caught it <strong>before</strong> it reached production.</p>
+      <h3>What we did instead</h3>
+      <p>Every request starts as a <strong>contract committed before any code</strong>. The agent implements against
+      that contract, and an <strong>independent review</strong> audits the delivery against the same text.</p>
+      <p style="margin-top:3.5mm">This is how we built NodeFlow itself — and it is the workflow we are submitting:
+      <strong>the same chain works for any request</strong>, and the contract templates ship in the repository.</p>
     </div>
   </div>
-  <div class="foot"><span>NodeFlow · a developer workflow</span><span>2</span></div>
+  <div class="foot"><span>NodeFlow · the workflow</span><span>2</span></div>
 </section>
 
-<!-- 3 · The workflow -->
+<!-- 3 · The workflow, end to end -->
 <section class="slide">
-  <div class="kick">The workflow we improved</div>
-  <h2>From idea to code, with <span class="k">evidence at every step</span></h2>
+  <div class="kick">The workflow, end to end</div>
+  <h2>From a request to reviewed code, with <span class="k">evidence at every step</span></h2>
   <div class="chain">
-    <div class="node">dictated idea</div><div class="arrow">→</div>
-    <div class="node hi">versioned contract</div><div class="arrow">→</div>
+    <div class="node">request</div><div class="arrow">→</div>
+    <div class="node hi">contract, committed first</div><div class="arrow">→</div>
     <div class="node hi">Bob implements</div><div class="arrow">→</div>
     <div class="node">delivery commit</div><div class="arrow">→</div>
     <div class="node">independent review</div><div class="arrow">→</div>
     <div class="node">fix</div>
   </div>
-  <p>One request, complete, exactly as it sits in the git history:</p>
+  <p><strong>Two real requests, with their commits:</strong></p>
   <ul>
-    <li>The voice segmenter contract was committed <strong>before</strong> any code: <span class="acc">00edcf6</span></li>
-    <li>Bob implements the module and its endpoint: delivered in <span class="acc">cff0baa</span></li>
-    <li>The independent review finds a <strong>real timing defect</strong>: fixed in <span class="acc">0e059ed</span></li>
+    <li><strong>The partial-transcript segmenter.</strong> The contract was committed before any code
+    (<span class="acc">docs/hackathon/PEDIDO-BOB-01.md</span>). Bob implemented the module and its endpoint and
+    delivered <span class="acc">cff0baa</span>. A later revision fixed its stability: <span class="acc">e84fb5b</span>.</li>
+    <li><strong>Creating the nodes when the turn closes.</strong> The integration landed in
+    <span class="acc">8582026</span>; the review found that nodes were being created once per audio segment
+    instead of once per turn, and that was fixed in <span class="acc">0e059ed</span>.</li>
   </ul>
-  <p class="muted">The steps are <strong>manual</strong> and deliberate: this is not an automatic voice-to-code pipeline.</p>
-  <div class="foot"><span>NodeFlow · a developer workflow</span><span>3</span></div>
+  <p class="muted">The steps are <strong>manual and deliberate</strong>: this is not an automatic voice-to-code
+  pipeline, and the review is a different agent from the one that wrote the code.</p>
+  <div class="foot"><span>NodeFlow · the workflow</span><span>3</span></div>
 </section>
 
 <!-- 4 · The prototype -->
@@ -124,63 +129,67 @@
   <div class="kick">The prototype</div>
   <h2>A canvas that draws itself while you speak</h2>
   <p>A desktop app (Tauri + Rust + React Flow): a <strong>deterministic segmenter</strong> on the backend decides
-  whether what you said is an idea, a correction or noise; a <strong>draft</strong> appears; when the turn closes,
-  each topic becomes a <strong>real node</strong> —chained, draggable and connectable— and <strong>Ctrl+Z</strong>
-  reverts it. Frictionless does not mean approving first: it means being able to undo afterwards.
-  The UI ships in <strong>Spanish and English</strong> (the ES/EN switch is in the top bar).</p>
-  <img class="shot" src="app.png" alt="NodeFlow: the canvas with the chain of nodes created by voice">
-  <div class="foot"><span>NodeFlow · the prototype running</span><span>4</span></div>
+  whether what you said is an idea, a correction or noise; a <strong>draft</strong> appears as you speak; when the
+  turn closes, each topic becomes a <strong>real node</strong> —chained, draggable and connectable—.
+  Nodes are created <strong>without a confirmation step</strong>: the safety net is that you can undo them.
+  The interface ships in <strong>Spanish and English</strong> (the ES/EN switch is in the top bar).</p>
+  <img class="shot" src="app.png" alt="The NodeFlow canvas">
+  <p class="caption">The canvas in the <strong>web demo</strong>, which simulates voice: without the Rust backend
+  there is no microphone. The video shows the desktop app creating these nodes by dictation.</p>
+  <div class="foot"><span>NodeFlow · the prototype</span><span>4</span></div>
 </section>
 
 <!-- 5 · Bob -->
 <section class="slide">
-  <div class="kick">IBM Bob 2.0 · the core component</div>
-  <h2>Bob wrote the voice engine. The chain proves it.</h2>
+  <div class="kick">IBM Bob 2.0 · how it was used</div>
+  <h2>Bob implemented the segmenter and its client. The chain proves it.</h2>
   <div class="grid2">
     <div class="card">
       <h3>What Bob implemented</h3>
-      <ul style="font-size:12.5pt">
-        <li>The backend <strong>voice segmenter</strong> (Rust) and its endpoint.</li>
+      <ul style="font-size:12pt">
+        <li>The backend <strong>partial-transcript segmenter</strong> (Rust) and its endpoint.</li>
         <li>The <strong>partial-result client</strong> on the frontend.</li>
         <li>The <strong>UX fixes</strong> that came out of the first real-audio test.</li>
       </ul>
     </div>
     <div class="card">
       <h3>Where the evidence lives</h3>
-      <ul style="font-size:12.5pt">
-        <li>The <strong>contracts</strong> committed before the code: <span class="acc">docs/hackathon/PEDIDO-0*.md</span></li>
-        <li>The <strong>task session consumption summaries</strong>: <span class="acc">bob_sessions/</span></li>
-        <li>Which files it touched and which it did not: <span class="acc">docs/hackathon/EVIDENCIA-BOB.md</span></li>
+      <ul style="font-size:12pt">
+        <li>The <strong>contracts</strong>, committed before the code: <span class="acc">docs/hackathon/PEDIDO-0*.md</span></li>
+        <li>Bob's session record — it logs the <span class="acc">read_file</span> on the request:
+        <span class="acc">bob_sessions/bob-task-*.md</span></li>
+        <li>The <strong>task session summaries</strong> and which files it touched:
+        <span class="acc">bob_sessions/</span> · <span class="acc">docs/hackathon/EVIDENCIA-BOB.md</span></li>
       </ul>
     </div>
   </div>
-  <p class="muted" style="margin-top:4mm">What we do <strong>not</strong> claim: no parallelism, no subagents attributed
-  to Bob. Only what is on the record —contracts, commits, summaries— not a line more.</p>
+  <p class="muted" style="margin-top:3.5mm">What we do <strong>not</strong> claim: no parallelism and no subagents
+  attributed to Bob, and no credit for the transcription or speech engines — those are hired services.</p>
   <div class="foot"><span>NodeFlow · IBM Bob 2.0</span><span>5</span></div>
 </section>
 
-<!-- 6 · Results -->
+<!-- 6 · Recorded verification results -->
 <section class="slide">
-  <div class="kick">Results, with their source</div>
-  <h2>Numbers you can run again</h2>
-  <div style="display:flex; gap:14mm; margin:2mm 0 6mm">
-    <div><div class="num">324<span style="font-size:15pt;color:#94a3b8">/324</span></div><div class="nlabel">Rust tests</div></div>
-    <div><div class="num">135<span style="font-size:15pt;color:#94a3b8">/135</span></div><div class="nlabel">frontend tests</div></div>
-    <div><div class="num">23</div><div class="nlabel">merged PRs</div></div>
-    <div><div class="num">48<span style="font-size:15pt;color:#94a3b8"> h</span></div><div class="nlabel">of building</div></div>
+  <div class="kick">Recorded verification results</div>
+  <h2>What the repository records</h2>
+  <div style="display:flex; gap:11mm; margin:1mm 0 5mm">
+    <div><div class="num">324<span style="font-size:14pt;color:#94a3b8">/324</span></div><div class="nlabel">Rust tests<br>commit 0d05b2f</div></div>
+    <div><div class="num">135<span style="font-size:14pt;color:#94a3b8">/135</span></div><div class="nlabel">frontend tests<br>commit a42be37</div></div>
+    <div><div class="num">25</div><div class="nlabel">merged PRs, Sep 26–27<br>(code, docs and deps)</div></div>
+    <div><div class="num">1</div><div class="nlabel">defect caught in review<br>before merging · 0e059ed</div></div>
   </div>
   <div class="grid2">
     <div class="card">
-      <h3>One case we measured</h3>
-      <p>A whole <strong>task</strong> handed to a coding agent produced <strong>0 files in 80 tool calls</strong>.
-      The same work, split into a <strong>piece</strong> (one pure function, exact signature, enumerated cases),
-      was delivered in <strong>1 attempt</strong> with 12 tests green.</p>
+      <h3>What these numbers are</h3>
+      <p>They are <strong>recorded results from the test suites and the pull-request history</strong> — what was
+      verified at the time, on the commits named next to each one, published with the repository so they can be
+      checked. They are <strong>not</strong> a measured time saving.</p>
     </div>
     <div class="card">
       <h3>The limits, stated up front</h3>
-      <ul style="font-size:12pt">
-        <li>324/324 and 135/135 are <strong>test-suite results</strong>, not a measured saving.</li>
-        <li>The case above is <strong>one observed case</strong>, not a controlled experiment.</li>
+      <ul style="font-size:11.5pt">
+        <li>Test counts measure <strong>verification</strong>, not saved effort.</li>
+        <li>The defect caught in review is <strong>one case</strong>, not a controlled experiment.</li>
         <li>The process was applied <strong>to this project</strong>: it does not prove general productivity.</li>
       </ul>
     </div>
@@ -188,7 +197,34 @@
   <div class="foot"><span>NodeFlow · results</span><span>6</span></div>
 </section>
 
-<!-- 7 · Closing -->
+<!-- 7 · The procedure, reusable -->
+<section class="slide">
+  <div class="kick">The procedure, reusable</div>
+  <h2>Any developer can run the same chain</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>The five steps</h3>
+      <ul style="font-size:11.5pt">
+        <li><strong>Write the contract</strong> — scope, signature, enumerated cases. Templates are in the repo
+        (<span class="acc">docs/hackathon/PEDIDO-0*.md</span>).</li>
+        <li><strong>Commit it before the code</strong>, so the request has a fixed date.</li>
+        <li><strong>Let the agent implement against that text</strong>, not against a chat.</li>
+        <li><strong>Audit the delivery with a different agent</strong> — whoever wrote the code does not grade it.</li>
+        <li><strong>Fix and record it</strong>: the fix commit points back at the review finding.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Why it held</h3>
+      <p>The contract is the thing you can compare against, so review stops being opinion. When the contract left
+      something open — the cardinality of an event — the review found it and the fix landed before merge.</p>
+      <p style="margin-top:3.5mm">The canvas is where the request becomes that contract: you talk, the nodes
+      appear, and it gets written down while it is still fresh.</p>
+    </div>
+  </div>
+  <div class="foot"><span>NodeFlow · the procedure</span><span>7</span></div>
+</section>
+
+<!-- 8 · Closing -->
 <section class="slide">
   <div class="kick">Closing</div>
   <h2>The process, reusable. The product, working.</h2>
@@ -197,17 +233,17 @@
       <h3>Try it</h3>
       <p><strong>Repo</strong> · github.com/NeonEden/nodeflow-ibm-bob<br>
          <strong>Web demo</strong> · nodeflow-ibm-bob.vercel.app <span class="muted">(simulates voice: without the Rust backend there is no microphone)</span><br>
-         <strong>Desktop app</strong> · signed Windows release, or <span class="acc">npx tauri dev</span></p>
+         <strong>Desktop app</strong> · a Windows installer published in Releases, or build it with <span class="acc">npx tauri dev</span></p>
     </div>
     <div class="card">
       <h3>What we bring</h3>
-      <p>A workflow where the idea is written before the code, the agent implements against that text and the
-      delivery is audited independently — with <strong>IBM Bob 2.0 writing the engine</strong> and the evidence of
-      every step in the repository.</p>
+      <p>A workflow where the request is written before the code, the agent implements against that text and the
+      delivery is audited by a different agent — with <strong>IBM Bob 2.0 implementing the segmenter and its
+      client</strong>, and the evidence of every step in the repository.</p>
     </div>
   </div>
-  <p class="muted" style="margin-top:6mm">Presented by Tomás · Sep 27, 2026 · IBM Bob 2.0 Hackathon</p>
-  <div class="foot"><span>NodeFlow</span><span>7</span></div>
+  <p class="muted" style="margin-top:5mm">Presented by Tomás · Sep 27, 2026 · IBM Bob 2.0 Hackathon</p>
+  <div class="foot"><span>NodeFlow</span><span>8</span></div>
 </section>
 
 </body>

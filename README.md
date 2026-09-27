@@ -1,9 +1,20 @@
 # NodeFlow · IBM Bob 2.0 Hackathon
 
-**Hablás y el lienzo se dibuja.** NodeFlow es una app de escritorio *local-first* donde la voz no
-dicta texto: opera un grafo de ideas. Mientras hablás, el canvas muestra un **nodo fantasma** que crece
-con la frase; cuando cerrás el turno, el plan se **valida en código** contra el grafo real y recién ahí
-toca tu estado. El grafo vive en tu bóveda de Obsidian, en archivos que son tuyos.
+**You speak, and the canvas draws itself.** NodeFlow is a *local-first* desktop app where voice does
+not dictate text: it operates a graph of ideas. As you speak, the canvas shows a **draft node** that grows
+with the sentence; when the turn closes, the plan is **validated in code** against the real graph before it
+touches your state. The graph lives in your Obsidian vault, in files you own.
+
+**How this repo was built (the workflow we submit).** Every request was written as a **contract committed
+before any code** (`docs/hackathon/PEDIDO-0*.md`), **IBM Bob 2.0** implemented it, and an **independent
+review by a different agent** audited the delivery against that same text:
+
+**request → contract → Bob implements → delivery commit → independent review → fix**
+
+Two real requests with their commits: the contract for the partial-transcript segmenter was committed
+first, Bob delivered `cff0baa`, and a later revision fixed its stability (`e84fb5b`); the node-creation
+integration landed in `8582026`, the review found nodes were created once per audio segment instead of
+once per turn, and that was fixed in `0e059ed`. Details and the evidence: `docs/hackathon/`.
 
 - **Stack**: Tauri v2 · Rust (axum, API propia en `127.0.0.1:37371`) · React 19 + React Flow · TypeScript
 - **Voz**: AssemblyAI **Universal-Streaming v3** (WebSocket, token temporal que emite el backend) + TTS
@@ -38,17 +49,19 @@ Para la app de verdad —la que escucha tu voz— o para correr el demo en tu m�
 Los tres árbitros de cualquier cambio: **`npx tsc --noEmit`, `npm run build` y `cargo test --lib`**.
 Un cambio sin los tres en verde no está terminado.
 
-## Cómo se construyó esto con IBM Bob 2.0
+## How IBM Bob 2.0 was used
 
-El workflow que mejoramos es **especificar, implementar y revisar un cambio de software**. Bob es el
-implementador, y cada pedido siguió la misma cadena verificable:
+The workflow we improved is **specifying, implementing and reviewing a change to software**. Bob is the
+implementer, and every request followed the same verifiable chain:
 
-**contrato commiteado → sesión de Bob → commit de entrega → revisión independiente → corrección**
+**committed contract → Bob's session → delivery commit → independent review → fix**
 
-Un pedido completo como ejemplo: el **contrato del segmentador de voz** se commiteó en `00edcf6` *antes*
-de tocar código (`docs/hackathon/PEDIDO-BOB-01.md`); Bob implementó el módulo y su endpoint y entregó en
-`cff0baa`; una revisión independiente encontró un defecto real de temporalidad, que se corrigió en
-`0e059ed`. El resto de los pedidos está en `docs/hackathon/PEDIDO-0*.md` con sus entregas.
+What Bob implemented here: the backend **partial-transcript segmenter** (Rust) and its endpoint, and the
+**partial-result client** on the frontend. The evidence that the hackathon asks for — the **task session
+summaries** — lives in [`bob_sessions/`](bob_sessions/README.md), and which files Bob touched (and which it
+did not) is in `docs/hackathon/EVIDENCIA-BOB.md`. Note the limits we state on purpose: no parallelism and
+no subagents are attributed to Bob, and no credit is claimed for the transcription or speech engines —
+those are hired services.
 
 **La evidencia obligatoria de la submission** son las capturas del *task session consumption summary* de
 cada tarea de Bob: están en [`bob_sessions/`](bob_sessions/README.md), con el detalle de cómo se
