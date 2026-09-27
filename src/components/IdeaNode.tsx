@@ -4,6 +4,8 @@ import {
 import { GitBranch, Eye, Edit3, Trash2, Copy, Flame, HelpCircle, Telescope, Check, X, FileText, Reply } from 'lucide-react';
 import { IdeaNodeData, IdeaMaturityLevel, MATURITY_CONFIGS } from '../types';
 import { useTarjetas, useTema } from '../state/canvasPrefs';
+import { useIdioma } from '../i18n/useIdioma';
+import { textoGrafoDemo } from '../i18n/grafoDemo';
 
 /**
  * Level of Detail por zoom (renderizado progresivo).
@@ -101,6 +103,7 @@ export const IdeaNode: React.FC<NodeProps<IdeaNodeData>> = memo(({ id, data, sel
   const lod = useLod();
   const tarjetas = useTarjetas();
   const tema = useTema();
+  const { idioma } = useIdioma();
 
   const degree = data.degree ?? 0;
   const isHub = degree >= HUB_DEGREE;
@@ -374,7 +377,7 @@ export const IdeaNode: React.FC<NodeProps<IdeaNodeData>> = memo(({ id, data, sel
               lod === 'compacto' ? 'line-clamp-2' : ''
             }`}
           >
-            {data.title || <span className="nf-muted italic">Idea sin título...</span>}
+            {textoGrafoDemo(data.title, idioma) || <span className="nf-muted italic">Idea sin título...</span>}
           </div>
         )}
 
@@ -385,7 +388,7 @@ export const IdeaNode: React.FC<NodeProps<IdeaNodeData>> = memo(({ id, data, sel
               showFull ? 'line-clamp-3' : 'line-clamp-2'
             }`}
           >
-            {data.description}
+                      {textoGrafoDemo(data.description, idioma)}
           </p>
         )}
 
