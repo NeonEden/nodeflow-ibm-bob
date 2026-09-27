@@ -73,7 +73,7 @@
 | **Video presentation** | owner uploads — script in `VIDEO-SCRIPT-EN.md`, under 3 min, **in English**, with at least 90 s of the solution working |
 | **Public GitHub repository** | `github.com/NeonEden/nodeflow-ibm-bob` |
 | **Application URL** | `https://nodeflowsss.netlify.app` — public web demo with **real dictation**: the server issues a temporary speech session (30 s per session, 3 per day), no key needed |
-| **Bob evidence (mandatory)** | `bob_sessions/` — ⚠️ still missing: **the two PNGs there are NOT the summaries** (one is a context breakdown, one is a chat with counters). Capture the *task session consumption summary* of the sessions that did the work: **Tasks → select the task → click the task header → screenshot**. Tasks 01 and 02 share one session (`EVIDENCIA-BOB.md` L74–75) — do not invent one per request |
+| **Bob evidence (mandatory)** | `bob_sessions/` — ✅ the **task session summary** of the session that did the work is uploaded (`nodeflow_task01-02_todo-list-14de14.png`: the 14/14 todo list of the segmenter + client session). ⚠️ Optional: if your Bob build shows a *consumption* panel when you click the task header, add that screenshot too. Note: tasks 01 and 02 **share one session** (`EVIDENCIA-BOB.md` L74–75) — do not invent one per request |
 
 ## What we do NOT say (removed on purpose after the audit)
 
