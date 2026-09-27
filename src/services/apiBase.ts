@@ -17,6 +17,9 @@ const RAW = import.meta.env?.VITE_API_BASE as string | undefined;
 export const API_BASE: string =
   RAW === 'same-origin' || RAW === '/' ? '' : RAW?.replace(/\/$/, '') || DEFAULT_API_BASE;
 
+// Indica si estamos corriendo el demo web publicado (sin API_BASE) → modo demo.
+export const ES_DEMO_WEB: boolean = API_BASE === '';
+
 /** Une la base con una ruta relativa ('/api/...'). */
 export function apiUrl(path: string): string {
   return `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;

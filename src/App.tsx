@@ -105,11 +105,11 @@ import { debeMostrarOnboarding, marcarOnboardingVisto, type Almacen } from './ut
 import { BrainDumpModal } from './components/BrainDumpModal';
 import { SemanticBridgesModal } from './components/SemanticBridgesModal';
 import { postAiAction } from './services/aiApi';
-import { apiUrl } from './services/apiBase';
+import { apiUrl, ES_DEMO_WEB } from './services/apiBase';
 import { motorActual } from './state/motorActual';
 import { autoLayoutNodes } from './utils/layout';
 import { useUndoRedo } from './hooks/useUndoRedo';
-import { getInitialUser, saveCurrentUser } from './services/auth';
+import { getInitialUser, saveCurrentUser, DEMO_ACCOUNTS } from './services/auth';
 import {
   INITIAL_TEMPLATES,
   TemplateDefinition,
@@ -5029,6 +5029,13 @@ export default function App() {
           setIsWelcomeOpen(false);
           marcarOnboardingVisto(almacenOnboarding);
           setIsShortcutsOpen(true);
+        }}
+        esDemo={ES_DEMO_WEB}
+        onEntrarDemo={() => {
+          setCurrentUser(DEMO_ACCOUNTS[0]);
+          saveCurrentUser(DEMO_ACCOUNTS[0]);
+          setIsWelcomeOpen(false);
+          marcarOnboardingVisto(almacenOnboarding);
         }}
       />
 

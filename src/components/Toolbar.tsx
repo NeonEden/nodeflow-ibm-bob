@@ -26,6 +26,7 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import { MotorSelector } from './MotorSelector';
+import { BadgeDemo } from './BadgeDemo';
 import { IdiomaSwitch } from './IdiomaSwitch';
 import { ColorPickerMenu } from './ColorPickerMenu';
 import { EdgeAppearance, UserProfile } from '../types';
@@ -295,6 +296,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <MotorSelector />
         {/* Idioma de la interfaz y de la voz: el switch vive acá porque es una preferencia global. */}
         <IdiomaSwitch />
+        <BadgeDemo />
 
         <button
           type="button"

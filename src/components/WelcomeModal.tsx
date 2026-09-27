@@ -9,6 +9,8 @@ interface WelcomeModalProps {
   onOpenAiConfig: () => void;
   onOpenVoiceConfig: () => void;
   onOpenShortcuts: () => void;
+  esDemo?: boolean;
+  onEntrarDemo?: () => void;
 }
 
 /**
@@ -35,6 +37,8 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
   onOpenAiConfig,
   onOpenVoiceConfig,
   onOpenShortcuts,
+  esDemo,
+  onEntrarDemo,
 }) => {
   const { t } = useIdioma();
   // `null` = todavía no sabemos; la bienvenida no afirma nada que no haya leído de la API.
@@ -154,6 +158,18 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
             t('onboarding.voz.texto'),
             { etiqueta: t('onboarding.voz.boton'), onClick: onOpenVoiceConfig },
             hayVoz
+          )}
+          {esDemo && (
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onEntrarDemo}
+                className="rounded bg-emerald-600 px-3 py-1 text-sm font-medium text-white hover:bg-emerald-500"
+              >
+                {t('demo.entrar')}
+              </button>
+              <span className="text-xs text-slate-400">{t('demo.entrar.ayuda')}</span>
+            </div>
           )}
         </div>
 

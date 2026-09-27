@@ -176,6 +176,10 @@ const ES = {
   'onboarding.atajos': 'Ver todos los atajos',
   'onboarding.empezar': 'Empezar',
   'onboarding.listo': 'listo',
+  'demo.badge': 'Modo Demo Interactivo · Sin credenciales',
+  'demo.entrar': 'Probar el demo',
+  'demo.entrar.ayuda': 'Entra sin claves: el demo corre con datos de ejemplo.',
+  'demo.modo': 'Modo demo',
   'apikey.voz.titulo': 'Clave del dictado',
   'apikey.voz.descripcion':
     'Con tu clave de AssemblyAI funciona el dictado en vivo. Sin ella podés escribir y editar a mano.',
@@ -389,6 +393,10 @@ const EN: Record<Clave, string> = {
   'onboarding.atajos': 'See all shortcuts',
   'onboarding.empezar': 'Start',
   'onboarding.listo': 'ready',
+  'demo.badge': 'Interactive Demo Mode · No credentials',
+  'demo.entrar': 'Try the demo',
+  'demo.entrar.ayuda': 'Enter without keys: the demo runs on sample data.',
+  'demo.modo': 'Demo mode',
   'apikey.voz.titulo': 'Dictation key',
   'apikey.voz.descripcion':
     'Your AssemblyAI key turns on live dictation. Without it you can still type and edit by hand.',
