@@ -1,0 +1,11 @@
+NodeFlow starts with a simple frustration. An unclear request costs you three times: you build the wrong thing, the review turns into opinion, and the bug shows up late.
+
+So we changed the order. Every request is written down first, as a contract: what it does, its exact signature, and the cases it has to pass. And the contract is committed before any code exists.
+
+Then IBM Bob 2.0 implements against that text.
+
+Bob built the core of our voice path: the segmenter that decides, while you speak, whether what you just said is a new idea, a correction, or noise. It shipped. We reviewed it, found a real defect, and fixed it before merging.
+
+And here is the part we care about most. The canvas is where that method becomes a product. You speak, the nodes appear, and the request gets written down while it is still fresh.
+
+NodeFlow. Speak the request. Bob builds it against the contract. And nothing is called done until a command on the machine proves it.
