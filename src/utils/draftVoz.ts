@@ -33,9 +33,45 @@ export function palabras(texto: string): string[] {
   return (texto || '').trim().split(/\s+/).filter(Boolean);
 }
 
+/**
+ * Palabras que no aportan contenido cuando alguien piensa en voz alta: vacilaciones y funcionales.
+ * Existe porque en la web el clasificador del backend NO corre, así que esta regla es el flujo real
+ * del demo: sin el filtro, cualquier «eh bueno este» dibujaba un nodo en el lienzo.
+ */
+const VACIAS = new Set([
+  // vacilaciones
+  'eh', 'em', 'emm', 'mmm', 'ah', 'uh', 'bueno', 'che', 'dale', 'ok', 'okay', 'listo', 'hola',
+  'este', 'esto', 'eso', 'esa', 'ese',
+  // funcionales
+  'a', 'al', 'algo', 'ante', 'bajo', 'bien', 'como', 'con', 'cual', 'cuando', 'de', 'del', 'desde',
+  'donde', 'el', 'ella', 'en', 'entre', 'es', 'esta', 'está', 'hacia', 'hasta', 'la', 'las', 'le',
+  'les', 'lo', 'los', 'mas', 'más', 'me', 'mi', 'muy', 'nada', 'ni', 'no', 'nos', 'o', 'otra', 'otro',
+  'para', 'pero', 'por', 'que', 'qué', 'quien', 'quién', 'se', 'sin', 'sobre', 'son', 'su', 'sus',
+  'tal', 'te', 'todo', 'tu', 'tus', 'u', 'un', 'una', 'unas', 'unos', 'ver', 'y', 'ya', 'yo',
+]);
+
+/**
+ * Vacilaciones que se sacan del ARRANQUE del título. Sólo tokens inequívocos: «este» no está porque
+ * «este nodo» es contenido legítimo, no un titubeo.
+ */
+const MULETILLAS_INICIO = new Set(['eh', 'em', 'emm', 'mmm', 'ah', 'uh', 'bueno', 'che', 'dale', 'ok', 'okay', 'listo', 'hola']);
+
+/** Una palabra reducida a letras/números, sin puntuación de borde. */
+function letras(w: string): string {
+  return (w || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+}
+
+/** ¿La palabra aporta contenido? (no es vacilación ni funcional, y tiene cuerpo suficiente) */
+export function esPalabraDeContenido(w: string): boolean {
+  const l = letras(w);
+  return l.length >= 3 && !VACIAS.has(l);
+}
+
 /** ¿Ya hay una idea que valga la pena dibujar? */
 export function esIdeaEnVivo(texto: string): boolean {
-  return palabras(texto).length >= MIN_PALABRAS;
+  const p = palabras(texto);
+  if (p.length < MIN_PALABRAS) return false;
+  return p.some(esPalabraDeContenido);
 }
 
 /**
@@ -43,7 +79,11 @@ export function esIdeaEnVivo(texto: string): boolean {
  * el título es el encabezado de una idea a medio decir, no una cita textual.
  */
 export function tituloDelBorrador(texto: string): string {
-  const p = palabras(texto).slice(0, PALABRAS_TITULO);
+  // La vacilación no es el título: se sacan las muletillas del arranque, pero NUNCA todas — si todo era
+  // muletilla, un título feo es mejor que un nodo sin nombre.
+  let restantes = palabras(texto);
+  while (restantes.length > 1 && MULETILLAS_INICIO.has(letras(restantes[0]))) restantes = restantes.slice(1);
+  const p = restantes.slice(0, PALABRAS_TITULO);
   if (!p.length) return '';
   const t = p.join(' ').replace(/^[\s,.;:¡!¿?"'()«»“”\-]+/, '').replace(/[\s,.;:«»“”]+$/, '');
   return t || p.join(' ');

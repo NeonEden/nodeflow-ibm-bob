@@ -83,6 +83,44 @@ describe('palabras', () => {
   });
 });
 
+describe('esIdeaEnVivo v2 — la vacilación no dibuja', () => {
+  it('no dibuja con muletillas puras aunque tengan 3 palabras o más', () => {
+    expect(esIdeaEnVivo('eh bueno este')).toBe(false);
+    expect(esIdeaEnVivo('a ver a ver')).toBe(false);
+    expect(esIdeaEnVivo('mmm ok dale')).toBe(false);
+    expect(esIdeaEnVivo('bueno este este bueno')).toBe(false);
+  });
+
+  it('sí dibuja cuando hay al menos una palabra con contenido', () => {
+    expect(esIdeaEnVivo('eh bueno sintetizador')).toBe(true);
+    expect(esIdeaEnVivo('este nodo es la raíz')).toBe(true);
+    expect(esIdeaEnVivo('quiero un nodo')).toBe(true);
+  });
+
+  it('no rompe los casos de la v1', () => {
+    expect(esIdeaEnVivo('un sinte')).toBe(false);
+    expect(esIdeaEnVivo('un sintetizador visual')).toBe(true);
+  });
+});
+
+describe('tituloDelBorrador v2 — la vacilación no es el título', () => {
+  it('saca las muletillas del arranque', () => {
+    expect(tituloDelBorrador('eh bueno quiero un sintetizador visual de prueba')).toBe(
+      'quiero un sintetizador visual de prueba',
+    );
+    expect(tituloDelBorrador('mmm un nodo de audio')).toBe('un nodo de audio');
+  });
+
+  it('no toca el contenido cuando no hay muletilla', () => {
+    expect(tituloDelBorrador('un nodo de audio')).toBe('un nodo de audio');
+    expect(tituloDelBorrador('este nodo es la raíz')).toBe('este nodo es la raíz');
+  });
+
+  it('si todo era muletilla, no devuelve vacío', () => {
+    expect(tituloDelBorrador('eh bueno')).not.toBe('');
+  });
+});
+
 describe('nodoFantasma — qué se dibuja y dónde (la parte que se ve mientras hablás)', () => {
   it('no dibuja nada si todavía no hay idea', () => {
     expect(nodoFantasma('', { position: { x: 10, y: 10 } })).toBeNull();
