@@ -97,10 +97,18 @@ Estado real: NodeFlow ya tiene su propio servidor MCP (`mcp-server/nodeflow_mcp.
 herramientas**) y Hermes consume dos servidores MCP (uno de TouchDesigner y el de NodeFlow). O sea: **la
 decisión ya está tomada de hecho**, y funcionó.
 
-Lo que hay que corregir, medido:
-- **El MCP de Hermes apunta al repo equivocado**: `config.yaml` → `Desktop\NodeFlow\nodeflow-desktop\mcp-server\`
-  (el **laboratorio**, v0.3.7), no al oficial `NodeFlow BOB\nodeflow-ibm-bob`. Es decir: hoy la orquestación
-  le escribe al repo viejo. Es el arreglo de mayor relación valor/esfuerzo de todo este documento.
+Lo que había que corregir, medido **y ya corregido**:
+- **El MCP de Hermes apuntaba al repo equivocado**: `config.yaml` → `Desktop\NodeFlow\nodeflow-desktop\mcp-server\`
+  (el **laboratorio**, v0.3.7), no al oficial `NodeFlow BOB\nodeflow-ibm-bob`. Es decir: la orquestación le
+  escribía al repo viejo.
+  **Verificado antes de tocar** que los dos servidores son **idénticos byte por byte** (54.846 bytes, 1.264
+  líneas, 31 herramientas en ambos): el cambio de ruta no altera una línea de código, sólo el destino.
+  **Aplicado** con `hermes config set mcp_servers.nodeflow.args '["C:/Users/tomas/Desktop/Nodeflow BOB/nodeflow-ibm-bob/mcp-server/nodeflow_mcp.py"]'`
+  y confirmado leyendo el valor de vuelta del archivo.
+  ⚠️ **Requiere reiniciar Hermes para tomar efecto** (los servidores MCP se cargan al arrancar): hasta que se
+  reinicie, el efecto está **NO VERIFICADO**.
+  > Lección de proceso: se corrige con el CLI (`hermes config set`), nunca editando `config.yaml` a mano —
+  > el agente que intentó el `patch` directo recibió un rechazo del propio Hermes, y con razón.
 - **El servidor de TouchDesigner tiene `tools.exclude: ['*']`**: excluye todas sus herramientas. Vale
   revisar si es deliberado (no cargar esquemas que no se usan) o un residuo de una prueba; si es lo primero,
   es la configuración correcta y conviene copiarla como patrón.
@@ -164,7 +172,7 @@ página de precios de Azure y se están compilando con fuente. Lo que sí se pue
 
 | # | Paso | Por qué en ese orden | Árbitro |
 |---|---|---|---|
-1 | Corregir la ruta del MCP al repo oficial | Hoy la orquestación le escribe al laboratorio | `vault_status` devuelve la ruta del vault + el repo correcto |
+1 | ✅ **HECHO** — Corregir la ruta del MCP al repo oficial | El MCP le escribía al laboratorio | servidores idénticos (54.846 bytes), cambio de ruta aplicado con `hermes config set`; **verificación pendiente tras reinicio de Hermes** |
 2 | Fijar el ruteo: `astra` orquestador, `nano` ejecutor, `deepseek` para clasificaciones sueltas | Ya medido; no requiere desplegar nada | una pieza real entregada y arbitrada |
 3 | Retirar `gpt-5.3-codex` del ruteo (o aislarlo tras su modo propio) | Devuelve 400 en el transporte estándar; la deuda la paga cada integración | el ruteo no lo menciona |
 4 | Medir el costo por pieza: tokens reales de entrada y salida por pedido | Sin esto, cualquier estimación de crédito es decorativa | tabla de 3 pedidos consecutivos |
