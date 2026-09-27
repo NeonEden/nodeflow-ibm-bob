@@ -40,7 +40,7 @@ bundle del navegador, está mal y no se implementa.
 navegador ──GET /api/voz/jwt──▶ función Netlify
                                   ├─ 1. cuenta la sesión de esa IP (tope diario)
                                   ├─ 2. GET https://streaming.assemblyai.com/v3/token
-                                  │       ?expires_in_seconds=60&max_session_duration_seconds=30
+                                  │       ?expires_in_seconds=60&max_session_duration_seconds=60 (mínimo legal de AssemblyAI: 60..10800; 30 devuelve 422)
                                   │       Authorization: <ASSEMBLYAI_API_KEY>
                                   └─ 3. devuelve el token TEMPORAL
 navegador ◀── {token}, url, idioma, modelo, expira_en_s, aviso
@@ -49,8 +49,9 @@ navegador ──wss://streaming.assemblyai.com/v3/ws?token=…──▶ Assembly
 
 Por qué así y no de otra forma:
 
-- **`max_session_duration_seconds=30` hace que el corte lo imponga AssemblyAI**, no nuestro JS: no se puede
-  saltear desde el navegador ni con devtools. Es el límite duro.
+- **`max_session_duration_seconds=60` hace que el corte lo imponga AssemblyAI**, no nuestro JS: no se puede
+  saltear desde el navegador ni con devtools. Es el límite duro. (60 es el mínimo que acepta su API; los
+  30 s de sesión del demo los corta el panel del cliente.)
 - AssemblyAI **factura por tiempo de conexión abierta, no por audio enviado**, y una sesión sin cerrar se
   auto-cierra a las 3 h facturando todo. Además del tope del token, el cliente debe cerrar la sesión al
   terminar el turno.

@@ -89,8 +89,12 @@ export async function sesionVozDemo(ip = 'anon') {
 
   let respuesta;
   try {
+    // OJO con los limites documentados por AssemblyAI:
+    //   expires_in_seconds           -> 1..600
+    //   max_session_duration_seconds -> 60..10800  (¡30 da 422!)
+    // Los 30 s de sesion del demo los corta el panel; esto es el tope DURO del servidor.
     respuesta = await fetch(
-      'https://streaming.assemblyai.com/v3/token?expires_in_seconds=60&max_session_duration_seconds=30',
+      'https://streaming.assemblyai.com/v3/token?expires_in_seconds=60&max_session_duration_seconds=60',
       {
         method: 'GET',
         headers: {
