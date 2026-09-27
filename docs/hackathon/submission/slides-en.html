@@ -134,8 +134,9 @@
   Nodes are created <strong>without a confirmation step</strong>: the safety net is that you can undo them.
   The interface ships in <strong>Spanish and English</strong> (the ES/EN switch is in the top bar).</p>
   <img class="shot" src="app.png" alt="The NodeFlow canvas">
-  <p class="caption">The canvas in the <strong>web demo</strong>, which simulates voice: without the Rust backend
-  there is no microphone. The video shows the desktop app creating these nodes by dictation.</p>
+  <p class="caption">The canvas in the <strong>web demo</strong> at <span class="acc">nodeflowsss.netlify.app</span>,
+  where dictation is <strong>real</strong>: the server issues a temporary speech session, so anyone can speak without an
+  account or a key. The video shows the desktop app creating these nodes by dictation.</p>
   <div class="foot"><span>NodeFlow · the prototype</span><span>4</span></div>
 </section>
 
@@ -174,8 +175,8 @@
   <h2>What the repository records</h2>
   <div style="display:flex; gap:11mm; margin:1mm 0 5mm">
     <div><div class="num">324<span style="font-size:14pt;color:#94a3b8">/324</span></div><div class="nlabel">Rust tests<br>commit 0d05b2f</div></div>
-    <div><div class="num">135<span style="font-size:14pt;color:#94a3b8">/135</span></div><div class="nlabel">frontend tests<br>commit a42be37</div></div>
-    <div><div class="num">25</div><div class="nlabel">merged PRs, Sep 26–27<br>(code, docs and deps)</div></div>
+    <div><div class="num">141<span style="font-size:14pt;color:#94a3b8">/141</span></div><div class="nlabel">frontend tests<br>commit e47537a</div></div>
+    <div><div class="num">5</div><div class="nlabel">verification levels<br>docs/SISTEMA-ORQUESTACION.md</div></div>
     <div><div class="num">1</div><div class="nlabel">defect caught in review<br>before merging · 0e059ed</div></div>
   </div>
   <div class="grid2">
@@ -232,7 +233,7 @@
     <div class="card">
       <h3>Try it</h3>
       <p><strong>Repo</strong> · github.com/NeonEden/nodeflow-ibm-bob<br>
-         <strong>Web demo</strong> · nodeflow-ibm-bob.vercel.app <span class="muted">(simulates voice: without the Rust backend there is no microphone)</span><br>
+         <strong>Web demo</strong> · nodeflowsss.netlify.app <span class="muted">(real dictation: the server issues a temporary speech session — 30 s per session, 3 per day)</span><br>
          <strong>Desktop app</strong> · a Windows installer published in Releases, or build it with <span class="acc">npx tauri dev</span></p>
     </div>
     <div class="card">
