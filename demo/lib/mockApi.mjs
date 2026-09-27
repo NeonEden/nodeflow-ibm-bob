@@ -18,7 +18,35 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
-const FIXTURES = join(AQUI, '..', 'fixtures');
+// Dónde viven las fixtures depende de cómo se empaquete el API: en el repo (server local y la función
+// de Vercel) están en `demo/fixtures`; una Netlify Function viaja con `included_files`, deja el bundle en
+// `netlify/functions/api.mjs` y las fixtures en `demo/fixtures` — dos niveles arriba del bundle. En vez
+// de asumir un layout, se escala desde el directorio del módulo buscando la primera carpeta con JSONs.
+// Medido 27/09/2026: con la ruta fija `readdirSync` lanzaba al importar el módulo y TODA la API del demo
+// respondía 502 (el `api.zip` no llevaba fixtures).
+function tieneJson(d) {
+  try {
+    return readdirSync(d).some((f) => f.endsWith('.json'));
+  } catch {
+    return false;
+  }
+}
+
+function dirFixtures() {
+  if (process.env.DEMO_FIXTURES_DIR && tieneJson(process.env.DEMO_FIXTURES_DIR)) {
+    return process.env.DEMO_FIXTURES_DIR;
+  }
+  let base = AQUI;
+  for (let i = 0; i < 5; i++) {
+    for (const c of [join(base, 'fixtures'), join(base, 'demo', 'fixtures')]) {
+      if (tieneJson(c)) return c;
+    }
+    base = dirname(base);
+  }
+  return join(AQUI, '..', 'fixtures'); // layout del repo: el error de lectura queda a la vista, no tapado
+}
+
+const FIXTURES = dirFixtures();
 
 // ---------------------------------------------------------------- fixtures
 
