@@ -4823,6 +4823,11 @@ export default function App() {
           setDraftVoz('');
           setDecisionParcial(undefined);
         }}
+        // Demo web: cuando se agotan los 30 s (o el tope diario), el visitante carga su propia clave.
+        onPedirClaveVoz={() => {
+          setApiKeyVariante('voz');
+          setIsApiKeyModalOpen(true);
+        }}
         // La fase del turno: 'resolviendo' hace que el lienzo retire el borrador y no lo vuelva a dibujar
         // hasta el próximo turno.
         onFaseTurno={setFaseTurno}
