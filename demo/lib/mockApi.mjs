@@ -56,7 +56,12 @@ let PROPUESTAS = [];
 let REV = 1;
 let ID = 0;
 /** Idioma de la interfaz, tal como lo pide el switch (el backend real también es fuente de verdad). */
-let IDIOMA = (FIXTURAS.get('/api/idioma') || {}).idioma === 'en' ? 'en' : 'es';
+/**
+ * Idioma del demo. Por defecto **inglés**: el jurado del hackathon y la mayoría de quien abre este enlace
+ * no hablan español, y el front sincroniza su idioma contra el backend, así que el valor de acá es el que
+ * decide con qué idioma se aterriza. El switch ES/EN de la barra lo cambia igual.
+ */
+let IDIOMA = (FIXTURAS.get('/api/idioma') || {}).idioma === 'es' ? 'es' : 'en';
 const nuevoId = (p = 'demo') => `${p}-${Date.now().toString(36)}-${(ID++).toString(36)}`;
 
 /** El sobre completo que espera el front, con el lienzo vivo adentro. */
