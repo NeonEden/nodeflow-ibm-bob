@@ -1,11 +1,14 @@
 # Materiales de la submission
 
+> **El material que se envía es el inglés** (`-en`): el jurado lee inglés. Las versiones en español quedan
+> como referencia y para el envío del hackathon de voz, que también se hace en inglés.
+
 | Archivo | Qué es |
 |---|---|
-| `cover.png` | **Cover image** (1280×640) para el formulario de lablab |
-| `slides.pdf` | **Slide presentation**: 7 slides 16:9, listas para el formulario |
-| `slides.html` · `cover.html` | Las fuentes: se editan acá y se vuelven a renderizar |
-| `app.png` | La captura del lienzo que usan la cover y la slide 4 |
+| `cover-en.png` · `slides-en.pdf` | ⬅ **lo que se envía**: cover 1280×640 y las 7 slides 16:9, en inglés |
+| `cover.png` · `slides.pdf` | Las mismas piezas en español (referencia) |
+| `slides-en.html` · `cover-en.html` · `slides.html` · `cover.html` | Las fuentes: se editan acá y se vuelven a renderizar |
+| `app.png` | La captura del lienzo que usan la cover y la slide 4 (la UI se ve con el switch **ES/EN** de la barra superior) |
 
 ## Cómo se regeneran (no se editan a mano los binarios)
 

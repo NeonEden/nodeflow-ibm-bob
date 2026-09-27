@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NodeFlow — IBM Bob 2.0 Hackathon</title>
+<style>
+  /* Product palette (from src/index.css): dark slate + indigo/violet. */
+  @page { size: 338.7mm 190.5mm; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #0b1220; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; color: #e2e8f5; }
+
+  .slide {
+    position: relative;
+    width: 338.7mm; height: 190.5mm;
+    padding: 16mm 18mm;
+    background: #0f172a;
+    page-break-after: always;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .slide:last-child { page-break-after: auto; }
+  .slide::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #34d399); }
+
+  h1 { font-size: 37pt; line-height: 1.08; margin: 0 0 6mm; letter-spacing: -0.5pt; }
+  h2 { font-size: 24pt; margin: 0 0 4mm; letter-spacing: -0.3pt; }
+  h2 .k { color: #8b5cf6; }
+  p  { font-size: 15.5pt; line-height: 1.5; margin: 0 0 3.5mm; color: #cbd5e1; }
+  .lead { font-size: 18pt; color: #e2e8f5; }
+  .muted { color: #94a3b8; font-size: 13pt; }
+  strong { color: #fff; }
+  .acc { color: #a5b4fc; }
+
+  .kick { font-size: 12pt; letter-spacing: 2.6pt; text-transform: uppercase; color: #8b5cf6; margin-bottom: 5mm; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; flex: 1; }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 4mm; padding: 7mm; }
+  .card h3 { margin: 0 0 3mm; font-size: 16pt; color: #fff; }
+  .card p { font-size: 13pt; margin: 0; color: #cbd5e1; }
+  ul { margin: 0; padding-left: 7mm; }
+  li { font-size: 14.5pt; line-height: 1.45; margin-bottom: 2.6mm; color: #cbd5e1; }
+  li strong { color: #fff; }
+
+  .chain { display: flex; align-items: center; gap: 3mm; flex-wrap: wrap; margin: 5mm 0 4mm; }
+  .node { background: #1e293b; border: 1px solid #4f46e5; border-radius: 3mm; padding: 4mm 5mm; font-size: 13.5pt; color: #e2e8f5; }
+  .node.hi { border-color: #8b5cf6; background: #221c3f; }
+  .arrow { color: #8b5cf6; font-size: 16pt; }
+
+  .num { font-size: 30pt; color: #fff; font-weight: 600; letter-spacing: -1pt; }
+  .nlabel { font-size: 12pt; color: #94a3b8; }
+  /* Height capped on purpose: full width (302mm) the shot was ~189mm tall and did not fit the
+     190.5mm page — it was being clipped silently. At 86mm it fits. */
+  .shot { border: 1px solid #334155; border-radius: 3mm; width: 100%; height: 86mm;
+          object-fit: cover; object-position: top left; display: block; }
+  .foot { margin-top: auto; padding-top: 4mm; border-top: 1px solid #1e293b; font-size: 11.5pt; color: #64748b; display: flex; justify-content: space-between; }
+
+  .cover { justify-content: center; background: radial-gradient(1200px 700px at 78% 20%, #221c3f 0%, #0f172a 60%); }
+  .cover h1 { font-size: 46pt; }
+  .brand { display: flex; align-items: center; gap: 6mm; margin-bottom: 8mm; }
+  .logo { width: 17mm; height: 17mm; border-radius: 4mm; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          display: flex; align-items: center; justify-content: center; font-size: 22pt; font-weight: 700; color: #fff; }
+</style>
+</head>
+<body>
+
+<!-- 1 · Title -->
+<section class="slide cover">
+  <div class="brand"><div class="logo">NF</div><div class="kick" style="margin:0">IBM Bob 2.0 Hackathon · Sep 27, 2026</div></div>
+  <h1>NodeFlow</h1>
+  <p class="lead" style="max-width:250mm">The real case of a development workflow assisted by <strong>IBM Bob 2.0</strong>:
+  turn an idea into a <strong>versioned contract</strong>, have Bob implement it, and audit the delivery with
+  tests and an independent review.</p>
+  <p class="muted" style="margin-top:6mm">Tauri · Rust · React Flow · TypeScript &nbsp;·&nbsp; public repo &nbsp;·&nbsp; web demo, nothing to install</p>
+</section>
+
+<!-- 2 · The problem -->
+<section class="slide">
+  <div class="kick">The problem</div>
+  <h2>An ambiguous request does not produce a verifiable deliverable — and rework gets paid three times</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>What it costs today</h3>
+      <ul>
+        <li><strong>Implementing</strong>: you build too much or too little, because the scope was never written down.</li>
+        <li><strong>Reviewing</strong>: there is nothing to compare against, so review turns into opinion.</li>
+        <li><strong>Fixing</strong>: the defect shows up late, when code already sits on top of it.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>What we did differently</h3>
+      <p>The idea is written as a <strong>contract committed before touching code</strong>. The agent implements
+      against that contract and an <strong>independent review</strong> audits the delivery against the same text.</p>
+      <p style="margin-top:4mm">When the contract left something open — the cardinality of an event — the review
+      caught it <strong>before</strong> it reached production.</p>
+    </div>
+  </div>
+  <div class="foot"><span>NodeFlow · a developer workflow</span><span>2</span></div>
+</section>
+
+<!-- 3 · The workflow -->
+<section class="slide">
+  <div class="kick">The workflow we improved</div>
+  <h2>From idea to code, with <span class="k">evidence at every step</span></h2>
+  <div class="chain">
+    <div class="node">dictated idea</div><div class="arrow">→</div>
+    <div class="node hi">versioned contract</div><div class="arrow">→</div>
+    <div class="node hi">Bob implements</div><div class="arrow">→</div>
+    <div class="node">delivery commit</div><div class="arrow">→</div>
+    <div class="node">independent review</div><div class="arrow">→</div>
+    <div class="node">fix</div>
+  </div>
+  <p>One request, complete, exactly as it sits in the git history:</p>
+  <ul>
+    <li>The voice segmenter contract was committed <strong>before</strong> any code: <span class="acc">00edcf6</span></li>
+    <li>Bob implements the module and its endpoint: delivered in <span class="acc">cff0baa</span></li>
+    <li>The independent review finds a <strong>real timing defect</strong>: fixed in <span class="acc">0e059ed</span></li>
+  </ul>
+  <p class="muted">The steps are <strong>manual</strong> and deliberate: this is not an automatic voice-to-code pipeline.</p>
+  <div class="foot"><span>NodeFlow · a developer workflow</span><span>3</span></div>
+</section>
+
+<!-- 4 · The prototype -->
+<section class="slide">
+  <div class="kick">The prototype</div>
+  <h2>A canvas that draws itself while you speak</h2>
+  <p>A desktop app (Tauri + Rust + React Flow): a <strong>deterministic segmenter</strong> on the backend decides
+  whether what you said is an idea, a correction or noise; a <strong>draft</strong> appears; when the turn closes,
+  each topic becomes a <strong>real node</strong> —chained, draggable and connectable— and <strong>Ctrl+Z</strong>
+  reverts it. Frictionless does not mean approving first: it means being able to undo afterwards.
+  The UI ships in <strong>Spanish and English</strong> (the ES/EN switch is in the top bar).</p>
+  <img class="shot" src="app.png" alt="NodeFlow: the canvas with the chain of nodes created by voice">
+  <div class="foot"><span>NodeFlow · the prototype running</span><span>4</span></div>
+</section>
+
+<!-- 5 · Bob -->
+<section class="slide">
+  <div class="kick">IBM Bob 2.0 · the core component</div>
+  <h2>Bob wrote the voice engine. The chain proves it.</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>What Bob implemented</h3>
+      <ul style="font-size:12.5pt">
+        <li>The backend <strong>voice segmenter</strong> (Rust) and its endpoint.</li>
+        <li>The <strong>partial-result client</strong> on the frontend.</li>
+        <li>The <strong>UX fixes</strong> that came out of the first real-audio test.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Where the evidence lives</h3>
+      <ul style="font-size:12.5pt">
+        <li>The <strong>contracts</strong> committed before the code: <span class="acc">docs/hackathon/PEDIDO-0*.md</span></li>
+        <li>The <strong>task session consumption summaries</strong>: <span class="acc">bob_sessions/</span></li>
+        <li>Which files it touched and which it did not: <span class="acc">docs/hackathon/EVIDENCIA-BOB.md</span></li>
+      </ul>
+    </div>
+  </div>
+  <p class="muted" style="margin-top:4mm">What we do <strong>not</strong> claim: no parallelism, no subagents attributed
+  to Bob. Only what is on the record —contracts, commits, summaries— not a line more.</p>
+  <div class="foot"><span>NodeFlow · IBM Bob 2.0</span><span>5</span></div>
+</section>
+
+<!-- 6 · Results -->
+<section class="slide">
+  <div class="kick">Results, with their source</div>
+  <h2>Numbers you can run again</h2>
+  <div style="display:flex; gap:14mm; margin:2mm 0 6mm">
+    <div><div class="num">324<span style="font-size:15pt;color:#94a3b8">/324</span></div><div class="nlabel">Rust tests</div></div>
+    <div><div class="num">135<span style="font-size:15pt;color:#94a3b8">/135</span></div><div class="nlabel">frontend tests</div></div>
+    <div><div class="num">23</div><div class="nlabel">merged PRs</div></div>
+    <div><div class="num">48<span style="font-size:15pt;color:#94a3b8"> h</span></div><div class="nlabel">of building</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>One case we measured</h3>
+      <p>A whole <strong>task</strong> handed to a coding agent produced <strong>0 files in 80 tool calls</strong>.
+      The same work, split into a <strong>piece</strong> (one pure function, exact signature, enumerated cases),
+      was delivered in <strong>1 attempt</strong> with 12 tests green.</p>
+    </div>
+    <div class="card">
+      <h3>The limits, stated up front</h3>
+      <ul style="font-size:12pt">
+        <li>324/324 and 135/135 are <strong>test-suite results</strong>, not a measured saving.</li>
+        <li>The case above is <strong>one observed case</strong>, not a controlled experiment.</li>
+        <li>The process was applied <strong>to this project</strong>: it does not prove general productivity.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>NodeFlow · results</span><span>6</span></div>
+</section>
+
+<!-- 7 · Closing -->
+<section class="slide">
+  <div class="kick">Closing</div>
+  <h2>The process, reusable. The product, working.</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Try it</h3>
+      <p><strong>Repo</strong> · github.com/NeonEden/nodeflow-ibm-bob<br>
+         <strong>Web demo</strong> · nodeflow-ibm-bob.vercel.app <span class="muted">(simulates voice: without the Rust backend there is no microphone)</span><br>
+         <strong>Desktop app</strong> · signed Windows release, or <span class="acc">npx tauri dev</span></p>
+    </div>
+    <div class="card">
+      <h3>What we bring</h3>
+      <p>A workflow where the idea is written before the code, the agent implements against that text and the
+      delivery is audited independently — with <strong>IBM Bob 2.0 writing the engine</strong> and the evidence of
+      every step in the repository.</p>
+    </div>
+  </div>
+  <p class="muted" style="margin-top:6mm">Presented by Tomás · Sep 27, 2026 · IBM Bob 2.0 Hackathon</p>
+  <div class="foot"><span>NodeFlow</span><span>7</span></div>
+</section>
+
+</body>
+</html>
