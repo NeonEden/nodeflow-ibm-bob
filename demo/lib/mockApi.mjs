@@ -298,34 +298,6 @@ function claveAssemblyAI() {
     : '');
 }
 
-async function tokenAssemblyAI() {
-  const clave = claveAssemblyAI();
-  if (!clave) return { status: 503, json: { success: false, error: 'El demo no tiene clave de AssemblyAI configurada.' } };
-  const r = await fetch('https://streaming.assemblyai.com/v3/token?expires_in_seconds=600', {
-    headers: { authorization: clave },
-  });
-  if (!r.ok) return { status: 502, json: { success: false, error: `AssemblyAI respondió ${r.status}` } };
-  const d = await r.json();
-  // La MISMA forma que devuelve el backend real (`/api/voz/jwt`): si falta `protocolo` el panel elige
-  // el cliente equivocado y `jwt` es el campo que termina en el WebSocket.
-  return {
-    status: 200,
-    json: {
-      success: true,
-      token: d.token,
-      jwt: d.token,
-      expira_en_s: d.expires_in_seconds ?? 600,
-      url: 'wss://streaming.assemblyai.com/v3/ws',
-      proveedor: 'assemblyai',
-      etiqueta: 'AssemblyAI Universal-Streaming',
-      protocolo: 'assemblyai-v3',
-      modelo: 'u3-rt-pro',
-      idioma: 'es',
-      codec: 'pcm_s16le 16000 Hz',
-    },
-  };
-}
-
 // ---------------------------------------------------------------- acciones del lienzo (deterministas)
 //
 // Por qué existen: el demo tiene que responder SIEMPRE — sin claves, sin nube y sin que el visitante
