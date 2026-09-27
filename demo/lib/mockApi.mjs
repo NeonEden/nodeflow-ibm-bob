@@ -16,6 +16,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { sesionVozDemo } from './vozSesionDemo.mjs';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 // Dónde viven las fixtures depende de cómo se empaquete el API: en el repo (server local y la función
@@ -820,7 +821,7 @@ export async function handle({ method, ruta, query, body, ip = 'anon' }) {
   }
 
   // --- voz
-  if (ruta === '/api/voz/jwt') return tokenAssemblyAI();
+  if (ruta === '/api/voz/jwt') return sesionVozDemo(ip);
   // `configurada` NO se hardcodea: si no hay clave, el demo no puede pedir token y el panel diría «listo»
   // mientras el dictado falla. Se refleja la realidad (y se avisa por qué), en vez de mentir.
   if (ruta === '/api/voz/estado') {
