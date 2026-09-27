@@ -76,7 +76,7 @@ del video es el más caro: hacerlo una vez en lugar de dos es la diferencia entr
 | Material | Estado | Quién |
 |---|---|---|
 | Repo con el código donde Bob asistió | ✅ público: `github.com/NeonEden/nodeflow-ibm-bob` | — |
-| **Capturas de las sesiones de Bob** (requisito explícito) | ✅ subida la del **task session summary** de la sesión que hizo el trabajo (`nodeflow_task01-02_todo-list-14de14.png`: todo list 14/14 del segmentador + cliente). ⚠️ Opcional: si tu Bob muestra un panel de **consumo** al hacer clic en el encabezado de la tarea, sumá esa captura. Las tareas 01 y 02 comparten sesión | Tomás (GUI de Bob) |
+| **Capturas de las sesiones de Bob** (requisito explícito) | ✅ **completo: 5 PNG en `bob_sessions/`**, incluida la del **task session consumption summary** (`67% Full · ~179.8k / 270.0k tokens`), el todo list 14/14 de la sesión, el resumen de los tres pedidos (48 tests nuevos), los archivos del pedido 03 con su diff y la vista del IDE. Las tareas 01 y 02 comparten sesión | Tomás |
 | Video presentation | ❌ falta — lo graba Tomás (guion abajo: ≤3 min, ≥90 s de solución) | Tomás |
 | Slide presentation | ✅ `docs/hackathon/submission/slides-en.pdf` (8 slides, 16:9) | listo |
 | Cover image | ✅ `docs/hackathon/submission/cover-en.png` (1280×640) | listo |

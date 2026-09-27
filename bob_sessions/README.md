@@ -40,11 +40,15 @@ pide mostrar **cómo y dónde se usó Bob**; un relato sin la tabla al lado no e
 2. **Click en la cabecera de la tarea** → aparece el **task session consumption summary**.
 3. Capturar en PNG y guardarla acá como `nodeflow_taskNN_<descripcion-corta>_summary.png`.
 
-| Archivo | Tarea de Bob | Estado |
+| Archivo | Qué muestra | Tarea de Bob |
 |---|---|---|
-| `nodeflow_task01_segmentador_summary.png` | pedido 01 — el segmentador de voz del backend | ⬜ falta |
-| `nodeflow_task02_cliente-parcial_summary.png` | pedido 02 — el cliente del parcial en el front | ⬜ falta |
-| `nodeflow_task03_pulido-dictado_summary.png` | pedido 03 — pulido del dictado | ⬜ falta |
-| `nodeflow_task03_ide-tarea-completada.png` | la sesión vista en el IDE: `All tasks completed 14/14`, `179.8k / 270.0k`, `29.99` Bobcoins | ✅ está |
+| `nodeflow_task01_segmentador_consumption-summary.png` | **el *task session consumption summary***: `67% Full · ~179.8k / 270.0k Tokens`, con el desglose (system prompt 4.0k · tool definitions 6.8k · rules 3.7k · skills 839 · messages 164.4k · reservado para la respuesta 64.0k) | pedido 01 — el segmentador de voz (Rust) |
+| `nodeflow_task01-02_todo-list-completed.png` | el todo list de la sesión **14/14 completado**: crear el segmentador, el endpoint `POST /api/voz/parcial`, declararlo en `lib.rs`, el cliente en `vozService.ts`, los 4 fixes (toggle, dedup de cierres, fantasma, 409) y los árbitros | pedidos 01 y 02 (**comparten sesión**) |
+| `nodeflow_all-tasks_summary.png` | la tabla de los tres pedidos con los archivos tocados y los tests de cada uno: **48 tests nuevos (14 Rust + 34 TS)**, todos en verde en sus ramas | 01, 02 y 03 |
+| `nodeflow_task03_files-changed.png` | los archivos del pedido 03 con su diff: `VozPanel.tsx +163 −12`, `App.tsx +63 −4`, `vozService.test.ts +295`, `pulido.test.ts +194`, `9 files changed` | pedido 03 — pulido del dictado |
+| `nodeflow_task03_ide-session.png` | la sesión vista en el IDE: `All tasks completed 14/14`, `179.8k / 270.0k`, `29.99` Bobcoins | la sesión de trabajo completa |
+
+**Estado: las 5 están en el repositorio.** La del *consumption summary* (el panel de tokens) es la que el
+guide pide textualmente: *«Select the task header. A task session consumption summary will be displayed.»*
 
 Los `.png` **no** están bloqueados por el `.gitignore` (verificado con `git check-ignore -v`).
