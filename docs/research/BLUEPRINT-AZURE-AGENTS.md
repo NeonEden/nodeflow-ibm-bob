@@ -74,29 +74,38 @@ gpt-5-mini | 2,3 s | **NO** | no emitió | Igual que el anterior. |
 > falta** — que es el comportamiento correcto — y que **astra no puede recibirlas en su modo actual**
 > (ese sí es un límite medido, con su error textual).
 
-## 2 · FASE 1 · Veredicto de la tabla
+## 2 · FASE 1 · Asignaciones candidatas (no un veredicto)
 
-### Modelo orquestador: `gpt-6-astra` (1000 TPM)
+> ⚠️ **Esta sección quedó corregida por la auditoría independiente (ver §5).** Lo que se mide acá
+> —TPM, latencia, structured output— es condición **necesaria**, no suficiente. Lo que decide es una
+> **prueba con casos de aceptación**. En palabras del auditor: *«el nombre no demuestra aptitud»*. Las
+> asignaciones de abajo son **candidaturas a evaluar**, y varias podrían cambiarse de lugar al correr la
+> prueba del §5.b.
+
+### Candidatura actual a orquestador: `gpt-6-astra` (1000 TPM)
 Razones medidas y de diseño: context window grande, devuelve **JSON válido** en 2,8 s, y es el único del lote
 con capacidad de razonamiento *y* cuota suficiente. Su límite —no acepta tools con razonamiento— encaja con
 el uso: **el orquestador no debería estar tocando herramientas de sistema de todos modos**; escribe
 contratos, audita entregas y firma veredictos.
 
-### Modelo ejecutante: `gpt-5.4-nano` (5000 TPM)
+### Modelo ejecutante candidato: `gpt-5.4-nano` (5000 TPM)
 **5000 TPM es diez veces la cuota del siguiente**, y respeta structured output en 2,3 s. Para piezas de
 código acotado con firma exacta (el patrón que ya validamos), es el caballo de batalla.
+El auditor **no descarta** a `gpt-5-mini` ni a `DeepSeek-V4-Flash` para este rol: ambos son candidatos a
+probar y podrían **reemplazar también al orquestador** si pasan los mismos casos con menor costo por
+entrega aceptada.
 
-### Tercer puesto, con uso específico: `DeepSeek-V4-Flash`
-El más rápido (1,3 s) y devuelve JSON, pero **20 TPM** lo deja fuera de cualquier bucle. Sirve para
-clasificaciones sueltas y baratas (¿este parcial es una idea, una corrección o ruido?) donde no encadena
-llamadas.
-
-### Descartados, con motivo
-- **gpt-5 y gpt-5-mini (50 TPM)**: no llegan a responder en modo razonamiento con presupuesto corto, y su
-  cuota no soporta un agente.
-- **grok-4.6 (50 TPM, 6,3 s)**: lo peor de las dos dimensiones.
-- **gpt-5.3-codex**: requiere un modo de API distinto y devuelve 400 en el estándar. Mantenerlo obliga a
-  código de transporte especial, que es exactamente el tipo de deuda que rompe un sistema multi-agente.
+### Descartados, con motivo — **revisados por la auditoría**
+- **gpt-5 y gpt-5-mini (50 TPM)**: en mi prueba agotaron el presupuesto razonando sin responder. El auditor
+  corrige el alcance: eso demuestra que **mi prueba no sirve para modelos de razonamiento** (60 tokens es
+  un presupuesto absurdo para ellos), no que el modelo no sirva. **gpt-5 vuelve a la lista como candidato a
+  orquestador**, con la prueba del §5.b y con la restricción real: 50 TPM lo limita a revisión acotada.
+- **grok-4.6 (50 TPM, 6,3 s)**: descartado para bucle operativo. Sí candidato a **auditor separado**
+  (§5.a), con la advertencia del auditor: *«ser otro modelo no garantiza independencia ni precisión»*.
+- **gpt-5.3-codex**: mi texto decía «roto». **El auditor lo corrige y tiene razón**: devuelve 400 en
+  `chat/completions` porque vive en su modo `codex_responses` — es un problema de **adaptador y modo, no
+  una incapacidad demostrada del modelo**. Queda fuera del camino crítico hasta aislar el cuelgue, que es
+  distinto de darlo por inútil.
 
 ## 3 · FASE 2 · Arquitectura de agentes
 
@@ -211,6 +220,38 @@ Y el corolario incómodo: bajar el contexto no rinde tanto como parece. **Reduci
 turno de $0,0842 a $0,0792 — un 6 %**, porque la salida (2.000 tokens × $15/M = $0,03) pesa tanto como
 media entrada. **La palanca real es la cantidad de turnos, no su tamaño.**
 
+### 4.2 · Costo por entrega aceptada (la métrica que corrige todo lo anterior)
+
+El auditor fue tajante: comparar **precio por token** es la métrica equivocada; la que decide es el **costo
+de una entrega aceptada, incluyendo auditoría y reintentos**. Calculado con los intentos **reales** de esta
+semana:
+
+| Componente | Costo |
+|---|---|
+Intento limpio de ejecutor (60 llamadas) | $0,28 |
+Intento que falló (174 llamadas — el caso real) | $0,99 |
+**Reparación a cargo del orquestador** (12 turnos a gpt-5.4) | **$1,01** |
+Auditoría y arbitraje (3 turnos) | $0,25 |
+
+| Entrega | Costo |
+|---|---|
+**Aceptada a la primera** | **$0,53** |
+**Con una falla y reparación** | **$2,25** → **4,2×** |
+
+Dos conclusiones que cambian el criterio de selección:
+
+1. **Una falla multiplica el costo por 4,2.** La reparación la hace el **orquestador** —el modelo caro—,
+   así que el error del ejecutor se paga a precio del orquestador. Elegir ejecutor por precio por token es
+   optimizar el 12 % del costo y arriesgar el 88 %.
+2. **Un ejecutor con tasa de aceptación baja no tiene «costo por entrega aceptada»: no tiene entregas.**
+   Medido: 3 despachos al modelo de 120B, **0 aceptados sin reparación**. Su costo por entrega aceptada no
+   es alto, es **incalculable**. Esa es la forma correcta de descartarlo —no por precio, sino por no
+   producir el artefacto.
+
+**No hay umbrales de aprobación fijados en este documento**: el auditor los dejó explícitamente por decidir.
+Lo que sí queda fijado es la fórmula: `costo = (intento + (1−p)·reparación + auditoría) / p`, con `p` la tasa
+de aceptación medida sobre un juego de casos fijo.
+
 - Los deployments de **50 TPM** no gastan crédito de forma apreciable porque **no se pueden usar**: el
   cuello es la cuota, no el presupuesto.
 - Conclusión de asignación: **2.376 turnos de orquestación con gpt-5.4**, o **casi 45.000 con un
@@ -223,18 +264,23 @@ media entrada. **La palanca real es la cantidad de turnos, no su tamaño.**
 | # | Paso | Por qué en ese orden | Árbitro |
 |---|---|---|---|
 1 | ✅ **HECHO** — Corregir la ruta del MCP al repo oficial | El MCP le escribía al laboratorio | servidores idénticos (54.846 bytes), cambio de ruta aplicado con `hermes config set`; **verificación pendiente tras reinicio de Hermes** |
-2 | Fijar el ruteo: `astra` orquestador, `nano` ejecutor, `deepseek` para clasificaciones sueltas | Ya medido; no requiere desplegar nada | una pieza real entregada y arbitrada |
-3 | Retirar `gpt-5.3-codex` del ruteo (o aislarlo tras su modo propio) | Devuelve 400 en el transporte estándar; la deuda la paga cada integración | el ruteo no lo menciona |
-4 | Medir el costo por pieza: tokens reales de entrada y salida por pedido | Sin esto, cualquier estimación de crédito es decorativa | tabla de 3 pedidos consecutivos |
-5 | Consolidar skills (el índice se paga cada turno) | 119 skills = ~12 KB por turno para siempre | el índice baja y ningún flujo se rompe |
-6 | Estandarizar el transporte por MCP **si aparece un segundo consumidor** | Antes de eso, es costo sin comprador | un segundo cliente real |
+2 | **Correr la prueba de aceptación del §5.b** antes de fijar cualquier rol | Sin ella, toda asignación es una hipótesis: *«el nombre no demuestra aptitud»* | un juego de contratos con defectos sembrados + una tabla de hallazgos/omisiones/falsos positivos por modelo |
+3 | Fijar el ruteo **con el resultado de la prueba**, no antes: candidatos en §5.a | La prueba puede mover el orquestador a `gpt-5` o a `DeepSeek` | una pieza real entregada y arbitrada, con su costo por entrega aceptada |
+4 | Medir el **costo por entrega aceptada** de 3 pedidos consecutivos (no el precio por token) | Es la métrica que ordena las decisiones (§4.2) | tabla de 3 entregas con intentos, reparaciones y auditoría |
+5 | Aislar `gpt-5.3-codex`: es un problema de adaptador o modo, **no una incapacidad demostrada** | Dejarlo fuera del camino crítico sí; darlo por inútil, no | el cuelgue reproducido y acotado, o su modo propio funcionando |
+6 | Consolidar skills (el índice se paga cada turno) | 119 skills = ~12 KB por turno para siempre | el índice baja y ningún flujo se rompe |
+7 | Estandarizar el transporte por MCP **si aparece un segundo consumidor real** — y medir los schemas inyectados antes/después | Antes de eso, es costo sin comprador; y el descubrimiento indiscriminado puede **subir** el contexto | un segundo cliente real + medición del contexto fijo |
+8 | **Regla transversal**: un cambio reversible por vez, con los mismos casos de aceptación; nunca migrar proveedor, protocolo y memoria a la vez | Un fallo simultáneo no se puede atribuir | la línea base se mantiene medible en todo momento |
 
 ### 4.3 · Cambios propuestos en el System Prompt / Soul de los agentes
 
 1. **Al orquestador**: agregar el criterio de routing medido, textual —
-   *«TPM primero, structured output segundo, latencia tercero, razonamiento cuarto»* — y la regla de
-   **cortar la delegación**: si un ejecutor falla dos veces con el mismo defecto, se repara localmente y
-   otro revisa.
+   *«el TPM es condición de entrada, no un ranking: descarta deployments que no sostienen un turno. Entre los
+   que pasan, se elige por razonamiento verificable, después por acceso fiable a evidencia con tools,
+   después por structured output, y sólo entonces por tamaño de contexto. El precio por token no elige: elige
+   el costo por entrega aceptada.»*
+   Y la regla de **cortar la delegación**: si un ejecutor falla dos veces con el mismo defecto, se repara
+   localmente y otro revisa.
 2. **Al orquestador**: la regla «el que modifica no firma» ya existe; falta su consecuencia operativa:
    *«si escribo código, el veredicto lo corre otro»*.
 3. **Al ejecutor**: *«no explores: si el contrato dice qué archivos leer, leelos; si falta un dato, preguntá
@@ -243,7 +289,91 @@ media entrada. **La palanca real es la cantidad de turnos, no su tamaño.**
 
 ---
 
+## 5 · Auditoría independiente (Astra / `agent-commander`)
+
+Auditoría solicitada sobre este documento. Su veredicto no fue «aprobado» sino **«necesita cambios antes de
+fijar modelos por rol»**, y eso es exactamente el valor que aportó: **corrige el criterio, no los números**.
+
+### 5.a · Asignaciones: candidaturas a evaluar, no capacidades comprobadas
+
+| Rol | Candidatos, según el auditor |
+|---|---|
+Orquestador | **gpt-5** (rehabilitado), `gpt-5-mini`, `DeepSeek-V4-Flash`, `gpt-6-astra` (revisión acotada) |
+Ejecutor de piezas | `gpt-5-mini`, `DeepSeek-V4-Flash`, `gpt-5.4-nano` |
+Edición literal / extracción con esquema | `gpt-5.4-nano`, `gpt-4.1-mini` |
+Auditor separado del autor | `grok-4.6`, **sólo si encuentra defectos sembrados y cita líneas reales** |
+Fuera del camino crítico | `gpt-5.3-codex`, hasta aislar el cuelgue del adaptador o el modo |
+
+Reglas que agregó y que **no estaban** en el documento:
+- **Un dueño ejecutor activo por vez** en el working tree compartido; la auditoría va después, sin
+  escrituras concurrentes.
+- **Grok como auditor está condicionado a una prueba**: *«ser otro modelo no garantiza independencia ni
+  precisión»*. Cambiar de modelo no arregla un sesgo compartido.
+- Su frase que ordena todo: **«el nombre no demuestra aptitud»**.
+
+### 5.b · La prueba de aceptación que falta (definida, pendiente de ejecutar)
+
+Para leer contratos `PEDIDO-*.md` y emitir veredicto, el auditor **ordena los criterios así** —y corrige mi
+orden:
+
+> **razonamiento verificable > acceso fiable a evidencia por tools > salida estructurada > longitud de
+> contexto**, con dos matices: si el contrato ya viene íntegro en la entrada, **structured output pasa
+> delante de tools**; y para un orquestador que además ejecuta, **tool calling fiable es condición de
+> entrada**.
+
+*(Mi documento ponía structured output antes que el razonamiento. Es al revés: un JSON perfecto con la
+lectura equivocada es peor que un texto libre correcto.)*
+
+**El juego de casos, tal como lo especificó**: contratos con **contradicciones, decisiones ausentes,
+dependencias y solapamientos sembrados** a propósito. Se mide, por modelo: hallazgos correctos, **omisiones**,
+**falsos positivos**, **referencias inventadas** y cumplimiento del esquema. Y un caso aparte, obligatorio:
+**un fallo de herramienta debe demostrar que el agente se detiene y lo reporta — no que inventa éxito**
+(que es exactamente el fallo medido de esta semana).
+
+**Estado: definida, NO ejecutada.** Mientras no corra, las asignaciones del §2 y §5.a son hipótesis.
+
+### 5.c · MCP: selectivo, no por uniformidad
+
+Coincide en el punto de quiebre y **acota el alcance más que yo**: mantener el servidor de NodeFlow como
+**frontera de capacidades de la app** y **no envolver todo comando local sólo por uniformidad**. También
+puede justificarlo una frontera remota o de permisos. Dos advertencias que incorporo:
+- **«MCP estandariza acceso; no resuelve aislamiento, autorización ni idempotencia»** — no confundir
+  protocolo con garantía.
+- **Medir los schemas realmente inyectados antes y después**: el descubrimiento indiscriminado puede
+  *aumentar* el contexto fijo, que es justo el costo que se quería bajar.
+
+### 5.d · Memoria: estado en disco como fuente de verdad, y dos costos separados
+
+Ratifica el orden propuesto con formulaciones mejores que las mías:
+- **El resumen es un índice descartable, no prueba.**
+- **La ventana deslizante es transporte, no memoria del proyecto.**
+- Guardar **contrato vigente, revisión/commit, decisión, evidencia, pendientes, dueño y siguiente acción**;
+  actualizar **antes** de relevar al agente. Escritor único y referencia a versión, para no releer estado
+  obsoleto.
+- **Tratar los dos costos por separado**: reducir el historial reenviado es una cosa; las **instrucciones y
+  schemas fijos** son otra y no desaparecen por acortar la conversación.
+
+### 5.e · Riesgos que incorporo al documento
+
+1. **Confundir KB con tokens facturados** — el error que cometí en el primer cálculo del §4.1 y que el
+   auditor lista como riesgo antes de saber que había ocurrido.
+2. **Comparar precio por token en lugar de costo por entrega** (§4.2).
+3. **El crédito no implica elegibilidad ni cuota suficiente** para cada deployment.
+4. **Adaptadores aparentemente compatibles pueden perder argumentos, IDs o semántica de tools.**
+5. **Reintentar tras un timeout puede duplicar escrituras o gastos.**
+6. **Una auditoría puede repetir el sesgo del autor aunque cambie el modelo.**
+7. **No migrar proveedor, protocolo y memoria a la vez**: línea base, **un cambio reversible por vez**,
+   mismos casos de aceptación. Mantener pruebas y evidencias **fuera del contexto del autor**, para poder
+   reanudar y auditar sin depender de su resumen.
+
+---
+
 ## Anexo · Lo que este documento NO afirma
+
+> **Las asignaciones de modelos (§2 y §5.a) son candidaturas, no veredictos.** La prueba de aceptación que
+> las convertiría en veredicto está definida en §5.b y **no se ejecutó**. Todo lo medido acá (TPM, latencia,
+> structured output) es condición necesaria; la suficiente es el desempeño sobre casos con defectos
+> sembrados, y eso está pendiente.
 
 - **Precios**: los de la tabla 4.1 salen de la página oficial de Azure OpenAI y están citados. **No** hay
   precios verificados de `gpt-6-astra`, `gpt-5.4-nano`, ni de los modelos de Foundry (Llama, DeepSeek,
